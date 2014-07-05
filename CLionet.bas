@@ -5,11 +5,11 @@
 #include once "win/ws2tcpip.bi"
 
 constructor CLionet()
-    this.m_socket = socket_( AF_INET, SOCK_STREAM, IPPROTO_TCP )
+    this._open()
 end constructor
 
 destructor CLionet()
-    closesocket( this.m_socket )
+    this._close( 0 )
 end destructor
 
 function CLionet._startup() as integer
@@ -21,30 +21,79 @@ function CLionet._cleanup() as integer
     return WSACleanup()
 end function
 
-function CLionet._connect( addr as string, port as ushort ) as integer
-    return this._connect( inet_addr( addr ), htons( port ) )
+function CLionet._accept( scklistener as SOCKET ) as integer
+    this._close( 0 )
+    this.m_socket = accept( scklistener, 0, 0 )
+    return this.m_socket
 end function
 
-function CLionet._connect( addr as uinteger, port as u_short ) as integer
+function CLionet._listen( backlog as integer ) as integer
+    return listen( this.m_socket, backlog )
+end function
+
+function CLionet._bind( port as ushort ) as integer
+    return this._bind( INADDR_ANY, port )
+end function
+
+function CLionet._bind( addr as string, port as ushort ) as integer
+    return this._bind( inet_addr( addr ), port )
+end function
+
+function CLionet._bind( addr as uinteger, port as ushort ) as integer
     dim as sockaddr_in serveraddr
     with serveraddr
         .sin_family = AF_INET
         .sin_addr.S_addr = addr
-        .sin_port = port
+        .sin_port = htons( port )
     end with
-    return this._connect( cast( sockaddr ptr, @serveraddr ), sizeof(serveraddr) )
+    return this._bind( cast( sockaddr ptr, @serveraddr ) )
 end function
 
-function CLionet._connect( lpName as sockaddr ptr, length as integer ) as integer
-    return connect( m_socket, lpName, length )
+function CLionet._bind( lpName as sockaddr ptr ) as integer
+    return bind( this.m_socket, lpName, sizeof(sockaddr_in) )
+end function
+
+function CLionet._connect( addr as string, port as ushort ) as integer
+    return this._connect( inet_addr( addr ), port )
+end function
+
+function CLionet._connect( addr as uinteger, port as ushort ) as integer
+    dim as sockaddr_in serveraddr
+    with serveraddr
+        .sin_family = AF_INET
+        .sin_addr.S_addr = addr
+        .sin_port = htons( port )
+    end with
+    return this._connect( cast( sockaddr ptr, @serveraddr ) )
+end function
+
+function CLionet._connect( lpName as sockaddr ptr ) as integer
+    return connect( this.m_socket, lpName, sizeof(sockaddr_in) )
 end function
 
 function CLionet._send( in_buf as any ptr, length as integer ) as integer
-    return send( m_socket, in_buf, length, 0 )
+    return send( this.m_socket, in_buf, length, 0 )
 end function
 
-function CLionet._recv( out_buf as any ptr, length as integer, is_peeking as integer ) as integer
+function CLionet._recv( out_buf as any ptr, length as integer, f_peek as integer ) as integer
     dim as integer flag
-    if is_peeking then flag = MSG_PEEK
-    return recv( m_socket, out_buf, length, flag )
+    if f_peek then flag = MSG_PEEK
+    return recv( this.m_socket, out_buf, length, flag )
 end function
+
+function CLionet._open() as integer
+    this.m_socket = socket_( AF_INET, SOCK_STREAM, IPPROTO_TCP )
+    return this.m_socket
+end function
+
+function CLionet._close( f_reopen as integer = 1 ) as integer
+    dim as integer retval = closesocket( this.m_socket )
+    if f_reopen then
+        this._open()
+    endif
+    return retval
+end function
+
+property CLionet._getSocket() as SOCKET
+    return this.m_socket
+end property
