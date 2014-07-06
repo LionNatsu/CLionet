@@ -4,11 +4,10 @@
 #include once "windows.bi"
 
 type SOCKET as uinteger
-enum CLIONET_ASYNC_MODE
-    CLAM_SYNC
-    CLAM_ASYNC_NORMAL
-    CLAM_ASYNC_EVENT
-    CLAM_ASYNC_WINDOW
+enum CLIONET_MODE
+    CLAM_BLOCK
+    CLAM_NORMAL
+    CLAM_EVENT
 end enum
 type CLionet extends object
   public:
@@ -43,7 +42,7 @@ type CLionet extends object
     declare property remoteport() as ushort
     declare property localip() as zstring ptr
     declare property localport() as ushort
-    declare property asynMode( mode as CLIONET_ASYNC_MODE )
+    declare property async( mode as CLIONET_MODE )
   protected:
     declare virtual function connect( lpName as any ptr ) as integer
     declare virtual function bind( lpName as any ptr ) as integer

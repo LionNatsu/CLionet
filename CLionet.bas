@@ -64,17 +64,17 @@ function CLionet.accept( scklistener as SOCKET ) as integer
 end function
 
 function CLionet.listen( port as ushort ) as integer
-    if this.bind( INADDR_ANY, port ) = SOCKET_ERROR then return 0
+    if this.bind( INADDR_ANY, port ) = SOCKET_ERROR then return SOCKET_ERROR
     return this.listen()
 end function
 
 function CLionet.listen( addr as string, port as ushort ) as integer
-    if this.bind( addr, port ) = SOCKET_ERROR then return 0
+    if this.bind( addr, port ) = SOCKET_ERROR then return SOCKET_ERROR
     return this.listen()
 end function
 
 function CLionet.listen( addr as uinteger, port as ushort ) as integer
-    if this.bind( addr, port ) = SOCKET_ERROR then return 0
+    if this.bind( addr, port ) = SOCKET_ERROR then return SOCKET_ERROR
     return this.listen()
 end function
 
@@ -146,6 +146,10 @@ property CLionet.thesocket() as SOCKET
     return this.m_socket
 end property
 
+property CLionet.async( mode as CLIONET_MODE )
+    'TODO
+end property
+
 property CLionet.remoteip() as zstring ptr
     dim remoteAddr as sockaddr_in, i as integer = sizeof( sockaddr_in )
     getpeername_( this.m_socket, cast( sockaddr ptr, @remoteAddr ), @i )
@@ -169,3 +173,5 @@ property CLionet.localport() as ushort
     getsockname_( this.m_socket, cast( sockaddr ptr, @localAddr ), @i )
     return ntohs_( localAddr.sin_port )
 end property
+
+function 
