@@ -173,5 +173,3 @@ property CLionet.localport() as ushort
     getsockname_( this.m_socket, cast( sockaddr ptr, @localAddr ), @i )
     return ntohs_( localAddr.sin_port )
 end property
-
-function 
