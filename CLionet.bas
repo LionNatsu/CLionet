@@ -1,8 +1,7 @@
 #include "CLionet.bi"
 
 #include once "windows.bi"
-#include once "win/winsock2.bi"
-#include once "win/ws2tcpip.bi"
+#include once "inc/winsock2.bi"
 
 constructor CLionet()
     this._open()
@@ -27,8 +26,8 @@ function CLionet._accept( scklistener as SOCKET ) as integer
     return this.m_socket
 end function
 
-function CLionet._listen( backlog as integer ) as integer
-    return listen( this.m_socket, backlog )
+function CLionet._listen() as integer
+    return listen( this.m_socket, 5 )
 end function
 
 function CLionet._bind( port as ushort ) as integer

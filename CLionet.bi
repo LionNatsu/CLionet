@@ -28,11 +28,9 @@ type CLionet extends object
     declare virtual function _connect( addr as string, port as ushort ) as integer
     declare virtual function _connect( addr as uinteger, port as ushort ) as integer
     
-    declare virtual function _bind( port as ushort ) as integer
-    declare virtual function _bind( addr as string, port as ushort ) as integer
-    declare virtual function _bind( addr as uinteger, port as ushort ) as integer
-    
-    declare virtual function _listen( backlog as integer = 5 ) as integer
+    declare virtual function _listen( port as ushort ) as integer
+    declare virtual function _listen( addr as string, port as ushort ) as integer
+    declare virtual function _listen( addr as uinteger, port as ushort ) as integer
     declare virtual function _accept( scklistener as SOCKET ) as integer
     
     declare virtual function _send( in_buf as any ptr, length as integer ) as integer
@@ -40,11 +38,15 @@ type CLionet extends object
 
 
     declare property _getSocket() as SOCKET
-    declare property _asynMode()
+    declare property _asynMode( mode as CLIONET_ASYNC_MODE )
 
   protected:
     declare virtual function _connect( lpName as sockaddr ptr ) as integer
+    declare virtual function _bind( port as ushort ) as integer
+    declare virtual function _bind( addr as string, port as ushort ) as integer
+    declare virtual function _bind( addr as uinteger, port as ushort ) as integer
     declare virtual function _bind( lpName as sockaddr ptr ) as integer
+    declare virtual function _listen() as integer
 
     m_socket as SOCKET
 

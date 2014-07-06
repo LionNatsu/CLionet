@@ -10,8 +10,7 @@ dim as CLionet ptr cl = new CLionet(), cc = new CLionet()
         sleep 'wait 4 a key
         #endif
 
-cl->_bind(82)
-cl->_listen()
+cl->_listen(82)
 cc->_accept(cl->_getSocket)
 print "x"
 dim p as zstring * 50
