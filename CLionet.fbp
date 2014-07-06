@@ -1,0 +1,41 @@
+[Project]
+Version=3
+Description=The package of Windows Socket in FreeBASIC.
+Api=fb (FreeBASIC),win (Windows)
+Grouping=1
+AddMainFiles=1
+AddModuleFiles=1
+ResExport=
+CompileIfNewer=0
+IncVersion=0
+RunCmd=0
+[Make]
+Current=1
+1=Windows Console (Server),fbc -s console -d __SERVER__ -x "Server.exe"
+2=Windows Console (Client),fbc -s console -x "Client.exe"
+Recompile=2
+Module=Module Build,fbc -c
+Output=
+Run=
+Delete=
+[TabOrder]
+TabOrder=1,2,1001,4,3
+[File]
+1=Lionet.bas
+2=CLionet.bi
+3=README.md
+Main=1
+1001=CLionet.bas
+4=inc\winsock2.bi
+[BreakPoint]
+1=
+2=
+3=
+1001=
+4=
+[FileInfo]
+1=0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+2=0,15,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+3=0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+1001=0,140,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+4=0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
