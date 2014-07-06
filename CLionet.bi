@@ -1,8 +1,9 @@
 #include once "windows.bi"
-#include once "win/winsock2.bi"
 
 #ifndef __CLIONET_BI__
 #define __CLIONET_BI__
+
+type SOCKET as uinteger
 
 enum CLIONET_ASYNC_MODE
     CLAM_SYNC
@@ -19,34 +20,41 @@ type CLionet extends object
     declare constructor()
     declare virtual destructor()
 
-    declare static function _startup() as integer
-    declare static function _cleanup() as integer
-
-    declare virtual function _open() as integer
-    declare virtual function _close( f_reopen as integer = 1 ) as integer
+    declare static function startup() as integer
+    declare static function cleanup() as integer
+    declare static function error() as integer
     
-    declare virtual function _connect( addr as string, port as ushort ) as integer
-    declare virtual function _connect( addr as uinteger, port as ushort ) as integer
+#ifdef UNICODE
+    declare static function error_string() as wstring ptr
+#else
+    declare static function error_string() as zstring ptr
+#endif
+
+    declare virtual function opensocket() as integer
+    declare virtual function closesocket() as integer
     
-    declare virtual function _listen( port as ushort ) as integer
-    declare virtual function _listen( addr as string, port as ushort ) as integer
-    declare virtual function _listen( addr as uinteger, port as ushort ) as integer
-    declare virtual function _accept( scklistener as SOCKET ) as integer
+    declare virtual function connect( addr as string, port as ushort ) as integer
+    declare virtual function connect( addr as uinteger, port as ushort ) as integer
     
-    declare virtual function _send( in_buf as any ptr, length as integer ) as integer
-    declare virtual function _recv( out_buf as any ptr, length as integer, f_peek as integer = 0 ) as integer
+    declare virtual function bind( port as ushort ) as integer
+    declare virtual function bind( addr as string, port as ushort ) as integer
+    declare virtual function bind( addr as uinteger, port as ushort ) as integer
+    declare virtual function listen() as integer
+    declare virtual function listen( port as ushort ) as integer
+    declare virtual function listen( addr as string, port as ushort ) as integer
+    declare virtual function listen( addr as uinteger, port as ushort ) as integer
+    declare virtual function accept( scklistener as SOCKET ) as integer
+    
+    declare virtual function send( in_buf as any ptr, length as integer ) as integer
+    declare virtual function recv( out_buf as any ptr, length as integer, f_peek as integer = 0 ) as integer
 
 
-    declare property _getSocket() as SOCKET
-    declare property _asynMode( mode as CLIONET_ASYNC_MODE )
+    declare property getSocket() as SOCKET
+    declare property asynMode( mode as CLIONET_ASYNC_MODE )
 
   protected:
-    declare virtual function _connect( lpName as sockaddr ptr ) as integer
-    declare virtual function _bind( port as ushort ) as integer
-    declare virtual function _bind( addr as string, port as ushort ) as integer
-    declare virtual function _bind( addr as uinteger, port as ushort ) as integer
-    declare virtual function _bind( lpName as sockaddr ptr ) as integer
-    declare virtual function _listen() as integer
+    declare virtual function connect( lpName as any ptr ) as integer
+    declare virtual function bind( lpName as any ptr ) as integer
 
     m_socket as SOCKET
 

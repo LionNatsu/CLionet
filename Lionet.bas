@@ -1,5 +1,5 @@
 #include "CLionet.bi"
-CLionet._startup()
+CLionet.startup()
 dim as CLionet ptr cl = new CLionet(), cc = new CLionet()
 
         #if 0
@@ -10,18 +10,19 @@ dim as CLionet ptr cl = new CLionet(), cc = new CLionet()
         sleep 'wait 4 a key
         #endif
 
-cl->_listen(82)
-cc->_accept(cl->_getSocket)
+cl->listen(82)
+cc->accept(cl->getSocket)
+'print *CLionet.error_string()
 print "x"
 dim p as zstring * 50
-cc->_recv(@p,50)
-print WSAGETLASTERROR()
+cc->recv(@p,50)
+print *CLionet.error_string()
 print "==="
 print p
 print "==="
 sleep
-cl->_close()
-cc->_close()
+cl->closesocket()
+cc->closesocket()
 delete cc
 delete cl
-CLionet._cleanup()
+CLionet.cleanup()
