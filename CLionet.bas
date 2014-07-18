@@ -47,10 +47,8 @@ function CLionet.eventThread( boku as CLionet ptr ) as integer
         print "thread"
     dim as WSANETWORKEVENTS event_info
     do
-        print "---#1"
         if boku->flag_thread = 2 then boku->flag_thread = 0 : exit do
         if WSAWaitForMultipleEvents( 1, @boku->m_event, -1, 1000, -1 ) = WSA_WAIT_TIMEOUT then continue do
-        print "---#2",CLionet.error,*CLionet.error_string
         WSAEnumNetworkEvents( boku->m_socket, boku->m_event, @event_info )
         #macro ROUTER( fnc, evtmsk, bitmsk )
         if ( event_info.lNetworkEvents and evtmsk ) <> 0 then
@@ -67,17 +65,18 @@ function CLionet.eventThread( boku as CLionet ptr ) as integer
         ROUTER (onWrite,FD_WRITE,FD_WRITE_BIT)
         ROUTER (onClose,FD_CLOSE,FD_CLOSE_BIT)
         #undef ROUTER
-        print "---#3"
-        sleep_ 1000
+        sleep_ 0
     loop
     return 0
 end function
 
 function CLionet.accept() as integer
     dim newsocket as SOCKET
+    this.detachEvent()
     newsocket = .accept( this.m_socket, null, null )
     this.closesocket()
     this.m_socket = newsocket
+    this.attachEvent()
     return this.m_socket
 end function
 
@@ -86,8 +85,10 @@ function CLionet.accept( scklistener as CLionet ptr ) as integer
 end function
 
 function CLionet.accept( scklistener as SOCKET ) as integer
+    this.detachEvent()
     this.closesocket()
     this.m_socket = .accept( scklistener, null, null )
+    this.attachEvent()
     return this.m_socket
 end function
 
@@ -200,6 +201,10 @@ end property
 property CLionet.async() as CLIONET_MODE
     return this.async_mode
 end property
+
+sub CLionet.exitEventThread()
+    ExitThread( 0 )
+end sub
 
 sub CLionet.attachEvent()
     if this.async_mode <> CLIONET_MODE.CLAM_EVENTSELECT then exit sub

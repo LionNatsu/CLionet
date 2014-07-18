@@ -1,12 +1,8 @@
 #ifdef __SERVER__
 'Server
 #include "CLionet.bi"
-
-sub Onxxx ( boku as CLionet ptr, msg as integer, errcode as integer )
+sub OnB ( boku as CLionet ptr, msg as integer, errcode as integer )
     select case msg
-        case FD_ACCEPT
-            print "ACCEPT"
-            boku->accept()
         case FD_READ
             print "READ"
             dim p as zstring * 50
@@ -14,32 +10,30 @@ sub Onxxx ( boku as CLionet ptr, msg as integer, errcode as integer )
             print "data:["& p &"]"
         case FD_CLOSE
             print "CLOSE"
+            boku->async = CLAM_BLOCK
             boku->closesocket()
-            boku->opensocket()
-            boku->listen(85)
-            print "RE-LISTEN",CLionet.error,*CLionet.error_string
+            delete boku
+            CLionet.exitEventThread()
+    end select
+end sub
+sub OnA ( boku as CLionet ptr, msg as integer, errcode as integer )
+    select case msg
+        case FD_ACCEPT
+            print "ACCEPT"
+            dim as CLionet ptr cc = new CLionet()
+            cc->onSocket = procptr(OnB)
+            cc->async = CLAM_EVENTSELECT
+            cc->accept(boku)
     end select
 end sub
 
 CLionet.startup()
 dim as CLionet ptr cl = new CLionet()
+cl->onSocket = procptr(OnA)
+cl->async = CLAM_EVENTSELECT
 cl->listen(85)
-cl->onSocket = procptr(Onxxx)
-cl->async = CLIONET_MODE.CLAM_EVENTSELECT
-
-do
-    sleep_ 0
-Loop
+do:sleep_ 0:loop
 end
-
-cl->accept()
-dim p as zstring * 50
-cl->recv(@p,50)
-print cl->localport
-print p
-sleep
-delete cl
-CLionet.cleanup()
 
 #else
 'Client

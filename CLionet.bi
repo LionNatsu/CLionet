@@ -20,6 +20,7 @@ type CLionet extends object
 #else
     declare static  function error_string() as zstring ptr
 #endif
+    declare static  sub      exitEventThread()
     declare virtual function opensocket() as integer
     declare virtual function closesocket() as integer
     declare virtual function connect( addr as string, port as ushort ) as integer
