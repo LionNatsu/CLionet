@@ -5,6 +5,7 @@
 #undef opensocket
 
 constructor CLionet()
+    this.startup()
     this.opensocket()
 end constructor
 
@@ -43,31 +44,51 @@ function CLionet.error_string() as zstring ptr
 end function
 #endif
 
+function CLionet.parseAddress( address as string ) as uinteger
+    dim as uinteger dwAddress = inet_addr( address )
+    if dwAddress <> INADDR_NONE then return dwAddress
+	dim as hostent ptr host = gethostbyname( address )
+	if host = 0 then return 0
+	return *(host->h_addr)
+end function
+
 function CLionet.eventThread( boku as CLionet ptr ) as integer
-        print "thread"
-    dim as WSANETWORKEVENTS event_info
-    do
-        if boku->flag_thread = 2 then boku->flag_thread = 0 : exit do
-        if WSAWaitForMultipleEvents( 1, @boku->m_event, -1, 1000, -1 ) = WSA_WAIT_TIMEOUT then continue do
-        WSAEnumNetworkEvents( boku->m_socket, boku->m_event, @event_info )
-        #macro ROUTER( fnc, evtmsk, bitmsk )
+    #macro ROUTER_INIT_EXIT( fnc, msg )
+        if boku->onSocket <> 0 then
+            boku->onSocket( boku, msg, 0 )
+        elseif boku->fnc <> 0 then
+            boku->fnc( boku )
+        endif
+    #endmacro
+    #macro ROUTER( fnc, evtmsk, bitmsk, msg )
         if ( event_info.lNetworkEvents and evtmsk ) <> 0 then
             if boku->onSocket <> 0 then
-                boku->onSocket( boku, evtmsk, event_info.iErrorCode( bitmsk ) )
+                boku->onSocket( boku, msg, event_info.iErrorCode( bitmsk ) )
             elseif boku->fnc <> 0 then
                 boku->fnc( boku, event_info.iErrorCode( bitmsk ) )
             endif
         endif
-        #endmacro
-        ROUTER (onAccept,FD_ACCEPT,FD_ACCEPT_BIT)
-        ROUTER (onConnect,FD_CONNECT,FD_CONNECT_BIT)
-        ROUTER (onRead,FD_READ,FD_READ_BIT)
-        ROUTER (onWrite,FD_WRITE,FD_WRITE_BIT)
-        ROUTER (onClose,FD_CLOSE,FD_CLOSE_BIT)
-        #undef ROUTER
+    #endmacro
+    dim as WSANETWORKEVENTS event_info
+    ROUTER_INIT_EXIT( onInit, CLE_INIT )
+    do
+        if boku->flag_thread = 2 then
+            boku->flag_thread = 0
+            ROUTER_INIT_EXIT( onInit, CLE_INIT )
+            exit do
+        endIf
+        if WSAWaitForMultipleEvents( 1, @boku->m_event, -1, 1000, -1 ) = WSA_WAIT_TIMEOUT then continue do
+        WSAEnumNetworkEvents( boku->m_socket, boku->m_event, @event_info )
+        ROUTER( onAccept, FD_ACCEPT, FD_ACCEPT_BIT, CLIONET_EVENT.CLE_ACCEPT )
+        ROUTER( onConnect, FD_CONNECT, FD_CONNECT_BIT, CLIONET_EVENT.CLE_CONNECT )
+        ROUTER( onRead, FD_READ, FD_READ_BIT, CLIONET_EVENT.CLE_READ )
+        ROUTER( onWrite, FD_WRITE, FD_WRITE_BIT, CLIONET_EVENT.CLE_WRITE )
+        ROUTER( onClose, FD_CLOSE,FD_CLOSE_BIT, CLIONET_EVENT.CLE_CLOSE )
         sleep_ 0
     loop
     return 0
+    #undef ROUTER_INIT_EXIT
+    #undef ROUTER
 end function
 
 function CLionet.accept() as integer
@@ -116,7 +137,7 @@ function CLionet.bind( port as ushort ) as integer
 end function
 
 function CLionet.bind( addr as string, port as ushort ) as integer
-    return this.bind( .inet_addr( addr ), port )
+    return this.bind( CLionet.parseAddress( addr ), port )
 end function
 
 function CLionet.bind( addr as uinteger, port as ushort ) as integer
@@ -124,8 +145,8 @@ function CLionet.bind( addr as uinteger, port as ushort ) as integer
     with serveraddr
         .sin_family = AF_INET
         .sin_addr.S_addr = addr
+        .sin_port = htons( port )
     end with
-        serveraddr.sin_port = .htons( port )
     return this.bind( cast( sockaddr ptr, @serveraddr ) )
 end function
 
@@ -134,7 +155,7 @@ function CLionet.bind( lpName as any ptr ) as integer
 end function
 
 function CLionet.connect( addr as string, port as ushort ) as integer
-    return this.connect( .inet_addr( addr ), port )
+    return this.connect( CLionet.parseAddress( addr ), port )
 end function
 
 function CLionet.connect( addr as uinteger, port as ushort ) as integer
@@ -142,8 +163,8 @@ function CLionet.connect( addr as uinteger, port as ushort ) as integer
     with serveraddr
         .sin_family = AF_INET
         .sin_addr.S_addr = addr
+        .sin_port = htons( port )
     end with
-        serveraddr.sin_port = .htons( port )
     return this.connect( cast( sockaddr ptr, @serveraddr ) )
 end function
 
@@ -163,7 +184,7 @@ end function
 
 function CLionet.opensocket() as integer
     if this.m_socket then if this.closesocket() = 0 then return SOCKET_ERROR
-    this.m_socket = .socket_( AF_INET, SOCK_STREAM, IPPROTO_TCP )
+    this.m_socket = socket_( AF_INET, SOCK_STREAM, IPPROTO_TCP )
     this.attachEvent()
     return this.m_socket
 end function
@@ -180,7 +201,7 @@ end property
 property CLionet.async( mode as CLIONET_MODE )
     if this.async_mode = mode then exit property
     select case mode
-        case CLIONET_MODE.CLAM_EVENTSELECT
+        case CLIONET_MODE.CLM_EVENTSELECT
             if this.flag_thread <> 0 then exit property
             this.async_mode = mode
             this.m_event = WSACreateEvent()
@@ -190,7 +211,7 @@ property CLionet.async( mode as CLIONET_MODE )
             CreateThread( 0, 0, _
                 cast( LPTHREAD_START_ROUTINE, procptr( CLionet.eventThread ) ), _
                 @this, 0, @ThreadID )
-        case CLIONET_MODE.CLAM_BLOCK
+        case CLIONET_MODE.CLM_BLOCK
             this.async_mode = mode
             this.detachEvent()
             this.flag_thread = 2
@@ -207,19 +228,19 @@ sub CLionet.exitEventThread()
 end sub
 
 sub CLionet.attachEvent()
-    if this.async_mode <> CLIONET_MODE.CLAM_EVENTSELECT then exit sub
+    if this.async_mode <> CLIONET_MODE.CLM_EVENTSELECT then exit sub
     WSAEventSelect( this.m_socket, this.m_event, FD_READ or FD_CLOSE or FD_CONNECT or FD_ACCEPT or FD_WRITE )
 end sub
 
 sub CLionet.detachEvent()
-    if this.async_mode <> CLIONET_MODE.CLAM_EVENTSELECT then exit sub
+    if this.async_mode <> CLIONET_MODE.CLM_EVENTSELECT then exit sub
     WSAEventSelect( this.m_socket, this.m_event, 0 )
 end sub
 
-property CLionet.remoteip() as zstring ptr
+property CLionet.remoteip() as string
     dim remoteAddr as sockaddr_in, i as integer = sizeof( sockaddr_in )
     .getpeername( this.m_socket, cast( sockaddr ptr, @remoteAddr ), @i )
-    return .inet_ntoa( remoteAddr.sin_addr )
+    return *.inet_ntoa( remoteAddr.sin_addr )
 end property
 
 property CLionet.remoteport() as ushort
@@ -228,10 +249,10 @@ property CLionet.remoteport() as ushort
     return .ntohs( remoteAddr.sin_port )
 end property
 
-property CLionet.localip() as zstring ptr
+property CLionet.localip() as string
     dim localAddr as sockaddr_in, i as integer = sizeof( sockaddr_in )
     .getsockname( this.m_socket, cast( sockaddr ptr, @localAddr ), @i )
-    return .inet_ntoa( localAddr.sin_addr )
+    return *.inet_ntoa( localAddr.sin_addr )
 end property
 
 property CLionet.localport() as ushort

@@ -10,32 +10,39 @@ CompileIfNewer=0
 IncVersion=0
 RunCmd=0
 [Make]
-Current=1
+Module=Module Build,fbc -c
+Recompile=2
+Current=3
 1=Windows Console (Server),fbc -s console -d __SERVER__ -x "Server.exe"
 2=Windows Console (Client),fbc -s console -x "Client.exe"
-Recompile=2
-Module=Module Build,fbc -c
+3=Windows Console,fbc -s console -x "Lionet.exe" -g
 Output=
-Run=
+Run=Lionet.exe
 Delete=
 [TabOrder]
-TabOrder=1,2,1001,3
+TabOrder=1,1002,5,1001,2,3
 [File]
 1=Lionet.bas
 2=CLionet.bi
 3=README.md
 Main=1
 1001=CLionet.bas
-4=inc\winsock2.bi
+4=
+5=CLionetHttp.bi
+1002=CLionetHttp.bas
 [BreakPoint]
 1=
 2=
 3=
 1001=
 4=
+5=
+1002=
 [FileInfo]
-1=0,32,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-2=0,22,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+1=0,58,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+2=0,71,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 3=0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-1001=0,204,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+1001=0,210,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 4=0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+5=0,18,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+1002=0,139,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
