@@ -1,2 +1,5 @@
 *.undo
 *.exe
+*.bduss
+*.pcapng
+*.a

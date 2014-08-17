@@ -1,0 +1,1 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><getSystemTimeResponse xmlns="http://webservice.common.athena.mstchina.com/"><return>

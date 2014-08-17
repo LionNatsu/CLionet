@@ -1,0 +1,11 @@
+HTTP/1.1 200 OK
+Date: Mon, 04 Aug 2014 16:00:20 GMT
+Content-Type: text/html
+Content-Length: 20
+Connection: keep-alive
+ETag: W/"20-1401326094000"
+Last-Modified: Thu, 29 May 2014 01:14:54 GMT
+Set-Cookie: JSESSIONID=C5CE4B60C05760CD2D94550483CAD9EC; Path=/
+Set-Cookie: SERVERID=6887c6cd50b1c1f1cd7c76b03573a82e|1407170033|1407170033;Path=/
+
+Athena work fine!!! 

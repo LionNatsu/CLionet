@@ -1,0 +1,33 @@
+[Project]
+Version=3
+Description=The package of Windows Socket in FreeBASIC.
+Api=fb (FreeBASIC),win (Windows)
+Grouping=1
+AddMainFiles=1
+AddModuleFiles=1
+ResExport=
+CompileIfNewer=0
+IncVersion=0
+RunCmd=0
+[Make]
+Module=Module Build,fbc -c
+Recompile=2
+Current=1
+1=Windows Console (DEBUG),fbc -s console -x "Main.exe" -g  -d __DEBUG__ -mt
+2=Windows Console,fbc -s console -x "Main.exe" -mt
+Output=
+Run=Main.exe
+Delete=
+[TabOrder]
+TabOrder=1
+[File]
+1=Main.bas
+2=..\inc\CLionet.bi
+Main=1
+1001=..\src\CLionet.bas
+5=..\inc\CLionetHttp.bi
+1002=..\src\CLionetHttp.bas
+[BreakPoint]
+1=
+[FileInfo]
+1=0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0

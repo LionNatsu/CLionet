@@ -49,19 +49,24 @@ type CLionetHttp extends object
     m_timeout as integer
     
   private:
-    declare virtual sub WaitForState( stat as CLIONETHTTP_STATE, timeout as integer )
-    declare virtual sub SetState( stat as CLIONETHTTP_STATE )
+    declare sub WaitForState( stat as CLIONETHTTP_STATE, timeout as integer )
+    declare sub SetState( stat as CLIONETHTTP_STATE )
     m_4k_buffer as byte ptr
     
     m_recv_header as byte ptr
     m_recv_header_length as integer
+    m_recv_header_state as integer
     
     m_recv_buffer as byte ptr
     m_recv_length as integer
     m_recv_expected_length as integer
     
-    m_recv_header_state as integer
     m_chunked as integer
+    m_recv_chunk as byte ptr
+    m_recv_chunk_length as integer
+    declare function _parseChunk() as integer
+    declare function parseChunk() as integer
+    
     
     m_header_critical as CRITICAL_SECTION
     m_buffer_critical as CRITICAL_SECTION
