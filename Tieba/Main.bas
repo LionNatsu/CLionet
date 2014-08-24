@@ -27,6 +27,4 @@ dim as string nam, current_bduss
     close #1
 'dim as CTieba.CTiebaMe lion
 'lion.login(LION_BDUSS)
-
-print "PAKTE."
 sleep
