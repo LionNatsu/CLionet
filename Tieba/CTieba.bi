@@ -109,6 +109,23 @@ namespace CTieba
     
     
     '////////////////////////////////////
+    'Operation result
+    '////////////////////////////////////
+    type CTiebaSignResult
+        as integer success
+        as string  error_msg
+        as integer bonus
+        as integer _is_sign_in
+        as integer ordinal
+        as integer continuous
+        as integer total
+        as integer miss
+        as integer orange
+        as string  level_name
+        as integer levelup_target
+    end type
+    
+    '////////////////////////////////////
     'Main structure - First Person
     '////////////////////////////////////
     type CTiebaMe
@@ -119,6 +136,7 @@ namespace CTieba
         declare sub refreshBarsList()
         declare sub refreshTbs()
         declare sub signBar( bar as CTiebaBar )
+        declare sub signBar( bar as CTiebaBar, byref result as CTiebaSignResult )
         
         as CTiebaHttp ptr http
         as CTiebaUser ptr user
@@ -126,7 +144,6 @@ namespace CTieba
         
         as string bduss
         as string tbs
-      protected:
         
         '////Errors
       public:
