@@ -266,10 +266,10 @@ function CLionet.eventThread( boku as CLionet ptr ) as integer
 end function
 
 property CLionet.async( mode as CLIONET_MODE )
-    if this.async_mode = mode then exit property
+    if this.async_mode = mode then return
     select case mode
         case CLIONET_MODE.CLM_EVENTSELECT
-            if this.flag_thread <> 0 then exit property
+            if this.flag_thread <> 0 then return
             this.async_mode = mode
             this.m_event = WSACreateEvent()
             this.attachEvent()
@@ -293,12 +293,12 @@ sub CLionet.exitEventThread()
 end sub
 
 sub CLionet.attachEvent()
-    if this.async_mode <> CLIONET_MODE.CLM_EVENTSELECT then exit sub
+    if this.async_mode <> CLIONET_MODE.CLM_EVENTSELECT then return
     WSAEventSelect( this.m_socket, this.m_event, FD_READ or FD_CLOSE or FD_CONNECT or FD_ACCEPT or FD_WRITE )
 end sub
 
 sub CLionet.detachEvent()
-    if this.async_mode <> CLIONET_MODE.CLM_EVENTSELECT then exit sub
+    if this.async_mode <> CLIONET_MODE.CLM_EVENTSELECT then return
     WSAEventSelect( this.m_socket, this.m_event, 0 )
 end sub
 

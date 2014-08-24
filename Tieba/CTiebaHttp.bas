@@ -33,8 +33,8 @@ namespace CTieba
     end sub
     
     sub CTiebaHttp.header_add( key as string, value as string )
-        this.me->clear_err()
-        if this.m_top >= this.MAX_ITEM then this.me->set_err( "Too much arguments" ) : exit sub
+        this.me->clearErr()
+        if this.m_top >= this.MAX_ITEM then this.me->setErr( "Too much arguments" ) : return
         this.m_key( this.m_top ) = key
         this.m_val( this.m_top ) = value
         this.m_top += 1

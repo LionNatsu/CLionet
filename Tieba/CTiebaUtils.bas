@@ -31,12 +31,12 @@ namespace CTieba
     function to_utf8( source as string ) as string
         dim as integer buffer_length, buffer_length2
         buffer_length = MultiByteToWideChar( CP_ACP, 0, strptr( source ), len( source ), 0, 0 )
-        if buffer_length = 0 then exit function
+        if buffer_length = 0 then return ""
         redim as short ucs_buffer( buffer_length + 1 )
         MultiByteToWideChar( CP_ACP, 0, strptr( source ), len( source ), @ucs_buffer( 0 ), buffer_length )
         buffer_length2 = buffer_length
         buffer_length = WideCharToMultiByte( CP_UTF8, 0, @ucs_buffer( 0 ), buffer_length2, 0, 0, 0, 0 )
-        if buffer_length = 0 then exit function
+        if buffer_length = 0 then return ""
         redim as byte utf8_buffer( buffer_length + 1 )
         WideCharToMultiByte( CP_UTF8, 0, @ucs_buffer( 0 ), buffer_length2, @utf8_buffer( 0 ), buffer_length, 0, 0 )
         dim as string ret = left( *cast( zstring ptr, @utf8_buffer( 0 ) ), buffer_length )
@@ -46,12 +46,12 @@ namespace CTieba
     function from_utf8( source as string ) as string
         dim as integer buffer_length, buffer_length2
         buffer_length = MultiByteToWideChar( CP_UTF8, 0, strptr( source ), len( source ), 0, 0 )
-        if buffer_length = 0 then exit function
+        if buffer_length = 0 then return ""
         redim as short ucs_buffer( buffer_length + 1 )
         MultiByteToWideChar( CP_UTF8, 0, strptr( source ), len( source ), @ucs_buffer( 0 ), buffer_length )
         buffer_length2 = buffer_length
         buffer_length = WideCharToMultiByte( CP_ACP, 0, @ucs_buffer( 0 ), buffer_length2, 0, 0, 0, 0 )
-        if buffer_length = 0 then exit function
+        if buffer_length = 0 then return ""
         redim as byte utf8_buffer( buffer_length + 1 )
         WideCharToMultiByte( CP_ACP, 0, @ucs_buffer( 0 ), buffer_length2, @utf8_buffer( 0 ), buffer_length, 0, 0 )
         dim as string ret = left( *cast( zstring ptr, @utf8_buffer( 0 ) ), buffer_length )
@@ -61,7 +61,7 @@ namespace CTieba
     function from_unicode( source as string ) as string
         dim as integer buffer_length
         buffer_length = WideCharToMultiByte( CP_ACP, 0, cast( wstring ptr, strptr( source ) ), len( source ) \ 2, 0, 0, 0, 0 )
-        if buffer_length = 0 then exit function
+        if buffer_length = 0 then return ""
         redim as byte utf8_buffer( buffer_length + 1 )
         WideCharToMultiByte( CP_ACP, 0, cast( wstring ptr, strptr( source ) ), len( source ) \ 2, @utf8_buffer( 0 ), buffer_length, 0, 0 )
         dim as string ret = left( *cast( zstring ptr, @utf8_buffer( 0 ) ), buffer_length )
@@ -70,7 +70,7 @@ namespace CTieba
     
     function urlencode( source as string ) as string
         dim as string utf8_buffer = to_utf8( source )
-        if len( utf8_buffer ) = 0 then exit function
+        if len( utf8_buffer ) = 0 then return ""
         dim as string ret
         for i as integer = 0 to len( utf8_buffer )
             select case utf8_buffer[ i ]

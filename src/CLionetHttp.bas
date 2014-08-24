@@ -148,7 +148,7 @@ end sub
 
 sub CLionetHttp.WaitForState( stat as CLIONETHTTP_STATE, timeout as integer )
     this.m_event_waitfor = stat
-    WaitForSingleObject( this.m_event_statechange, timeout )
+    if WaitForSingleObject( this.m_event_statechange, timeout ) = ERROR_TIMEOUT then this.m_state = CLHS_ERROR
 end sub
 
 sub CLionetHttp.SetState( stat as CLIONETHTTP_STATE )
@@ -295,7 +295,7 @@ function CLionetHttp.parseChunk() as integer
 end function
 
 sub CLionetHttp.removeRequestHeader( key as string )
-    if instr( this.m_header, NEWLINE & key ) = 0 then exit sub
+    if instr( this.m_header, NEWLINE & key ) = 0 then return
     dim as integer k_posA = instr( this.m_header, NEWLINE & key ) + ( len( NEWLINE ) - 1 )
     dim as integer k_posB = instr( k_posA, this.m_header, NEWLINE ) + ( len( NEWLINE ) - 1 )
     dim as string A_block = left( this.m_header, k_posA )

@@ -46,9 +46,19 @@ namespace CTieba
     
     type CTiebaBar
         as string id, name
-        as integer is_sign, level
-        as string avatar, slogan
-        as integer member_count, thread_count
+        as integer isSign, level
+        as string avatar
+        as integer isLike
+        
+        '/////////
+        '//Details
+        as string levelName
+        as string curScore, levelupScore
+        
+        as string slogan
+        as string memberCount, threadCount, postCount
+        as string ptr essenceClassify
+        as string ptr essenceClassifyCount
         as ctieba_f ptr me
     end type
     
@@ -85,8 +95,11 @@ namespace CTieba
             declare sub removeItem( i as integer )
             declare function index( i as integer ) as CTiebaUser ptr
         end type
+        
     
-    
+    type CTiebaStringArray extends object
+        as integer m_count
+    end type
     '////////////////////////////////////
     'HTTP core
     '////////////////////////////////////
@@ -112,10 +125,7 @@ namespace CTieba
     'Operation result
     '////////////////////////////////////
     type CTiebaSignResult
-        as integer success
-        as string  error_msg
         as integer bonus
-        as integer _is_sign_in
         as integer ordinal
         as integer continuous
         as integer total
@@ -133,10 +143,13 @@ namespace CTieba
         declare constructor()
         declare destructor()
         declare sub login( bduss as string )
+        
         declare sub refreshBarsList()
         declare sub refreshTbs()
+        
         declare sub signBar( bar as CTiebaBar )
         declare sub signBar( bar as CTiebaBar, byref result as CTiebaSignResult )
+        declare sub signAllBars()
         
         as CTiebaHttp ptr http
         as CTiebaUser ptr user
@@ -147,12 +160,15 @@ namespace CTieba
         
         '////Errors
       public:
-        declare function is_err() as integer
-        declare function get_err() as string
-        declare sub set_err( s as string )
-        declare sub clear_err()
+        declare function isErr() as integer
+        declare function getErr() as string
+        declare sub setErr( s as string )
+        declare sub clearErr()
+        declare sub holdErr()
+        declare sub unholdErr()
       protected:
         as integer f_err
+        as integer f_holded
         as string lasterr
     end type
     
