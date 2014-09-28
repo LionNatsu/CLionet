@@ -8,7 +8,7 @@
 ' {Basic structures}:
 '   class CTiebaSubPost
 '   class CTiebaPost
-'   class CTiebaTopic
+'   class CTiebaThread
 '   class CTiebaBar
 '   class CTiebaUser
 '
@@ -20,53 +20,14 @@
 '
 namespace CTieba
     
-    '//Pseudo structure referring CTiebaMe
-    type ctieba_f as CTiebaMe
-    
-    '////////////////////////////////////
-    'Basic structure: User Bar Topic Post SubPost
-    '////////////////////////////////////
-    type CTiebaSubPost
-        'TODO
-        as string id
-        as ctieba_f ptr me
-    end type
-    
-    type CTiebaPost
-        'TODO
-        as string id
-        as ctieba_f ptr me
-    end type
-    
-    type CTiebaTopic
-        'TODO
-        as string id
-        as ctieba_f ptr me
-    end type
-    
-    type CTiebaBar
-        as string id, name
-        as integer isSign, level
-        as string avatar
-        as integer isLike
-        
-        '/////////
-        '//Details
-        as string levelName
-        as string curScore, levelupScore
-        
-        as string slogan
-        as string memberCount, threadCount, postCount
-        as string ptr essenceClassify
-        as string ptr essenceClassifyCount
-        as ctieba_f ptr me
-    end type
-    
-    type CTiebaUser
-        as string id, name
-        as ctieba_f ptr me
-    end type
-    
+    '//Pseudo structures
+    type ctiebame_f as CTiebaMe
+    type ctiebasubpost_f as CTiebaSubPost
+    type ctiebapost_f as CTiebaPost
+    type ctiebathread_f as CTiebaThread
+    type ctiebabar_f as CTiebaBar
+    type ctiebauser_f as CTiebaUser
+    type ctiebagoodclassify_f as CTiebaGoodClassify
     
     '////////////////////////////////////
     'Array structure for objects
@@ -77,7 +38,7 @@ namespace CTieba
         declare virtual sub addItem( lpObj as any ptr )
         declare abstract sub removeItem( i as integer )
         declare property count() as integer
-        as ctieba_f ptr me
+        as ctiebame_f ptr me
       protected:
         declare destructor()
         declare function _removeItem_can_remove( i as integer ) as integer
@@ -86,20 +47,109 @@ namespace CTieba
         as integer m_count
     end type
     
-        type CTiebaBarArray extends CTiebaArray
-            declare sub removeItem( i as integer )
-            declare function index( i as integer ) as CTiebaBar ptr
-        end type
+        '////////////////////////////////////
+        'CTieba***Array
+        '////////////////////////////////////
+        #macro MAKE_ARRAY_RM( x, e )
+            type x extends CTiebaArray
+                declare destructor()
+                declare sub removeItem( i as integer )
+                declare function index( i as integer ) as e ptr
+                declare operator let( rhs as x )
+            end type
+        #endmacro
         
-        type CTiebaUserArray extends CTiebaArray
-            declare sub removeItem( i as integer )
-            declare function index( i as integer ) as CTiebaUser ptr
-        end type
+        MAKE_ARRAY_RM( CTiebaSubPostArray, ctiebasubpost_f )
+        MAKE_ARRAY_RM( CTiebaPostArray, ctiebapost_f )
+        MAKE_ARRAY_RM( CTiebaThreadArray, ctiebathread_f )
+        MAKE_ARRAY_RM( CTiebaBarArray, ctiebabar_f )
+        MAKE_ARRAY_RM( CTiebaUserArray, ctiebauser_f )
+        MAKE_ARRAY_RM( CTiebaGoodClassifyArray, ctiebagoodclassify_f )
         
-    
-    type CTiebaStringArray extends object
-        as integer m_count
+        #undef MAKE_ARRAY_RM
+        
+    '////////////////////
+    type CTiebaGoodClassify
+        as string id, name
+        as ctiebame_f ptr me
     end type
+    
+    type CTiebaPage
+        as integer pageSize, current, totalCount
+        as integer hasNext, hasPrev
+        as ctiebame_f ptr me
+    end type
+    
+    enum CTiebaManagerType
+        NOT_MANAGER
+        MASTER_ADMINISTRATOR
+        MINOR_ADMINISTRATOR
+    end enum
+    '////////////////////////////////////
+    'Basic structure: User Bar Thread Post SubPost
+    '////////////////////////////////////
+    
+    type CTiebaUser
+        as string id, name
+        
+        '// Details
+        as string avatar
+        as CTiebaBarArray likes
+        as ctiebame_f ptr me
+    end type
+    
+    type CTiebaBar
+        as string id, name
+        as string avatar
+        as integer isLike, isSign
+        
+        as integer isBlack, isBlock, daysToFree, level
+        as CTiebaManagerType isManager
+        as string levelName
+        as string currentScore, levelupScore
+        
+        as string majorClass, minorClass
+        as string slogan
+        as string memberCount, threadCount, postCount
+        
+        as CTiebaGoodClassifyArray  goodClassify
+        as integer                  currentGoodClassify
+        
+        as CTiebaUserArray          managers
+        
+        as CTiebaThreadArray        threadList
+        as CTiebaPage               pageInfo
+        
+        as ctiebame_f ptr me
+    end type
+    
+    type CTiebaThread
+        as string id, name
+        as integer replyNum
+        as double lastTime
+        as integer isTop, isGood, isNtitle, isMemberTop, isNotice
+        as integer isPortal, isBakan, isVote, isVoice, isActivity
+        as string firstPostId, authorId, outline
+        as integer zanNum
+        as CTiebaUserArray zanId
+        as double lastZanTime
+        as ctiebame_f ptr me
+    end type
+    
+    type CTiebaPost
+        'TODO
+        as string id
+        as CTiebaUser author
+        
+        as ctiebame_f ptr me
+    end type
+    
+    type CTiebaSubPost
+        'TODO
+        as string id
+        as ctiebame_f ptr me
+    end type
+    
     '////////////////////////////////////
     'HTTP core
     '////////////////////////////////////
@@ -112,7 +162,7 @@ namespace CTieba
         declare static function random_str( length as integer ) as string
         declare static function random_hexstr( length as integer ) as string
         as CLionetHttp http
-        as ctieba_f ptr me
+        as ctiebame_f ptr me
       protected:
         as string m_imei, m_client_id, m_cuid
         const MAX_ITEM = 256
@@ -143,17 +193,19 @@ namespace CTieba
         declare constructor()
         declare destructor()
         declare sub login( bduss as string )
+        declare function isLoggedIn() as integer
         
         declare sub refreshBarsList()
         declare sub refreshTbs()
         
         declare sub signBar( bar as CTiebaBar )
-        declare sub signBar( bar as CTiebaBar, byref result as CTiebaSignResult )
+        declare function signBarX( bar as CTiebaBar ) as CTiebaSignResult
         declare sub signAllBars()
         
-        as CTiebaHttp ptr http
-        as CTiebaUser ptr user
-        as CTiebaBarArray ptr bars
+        declare function getBar( barName as string, pageNum as integer = 1 ) as CTiebaBar
+        
+        as CTiebaHttp sender
+        as CTiebaUser user
         
         as string bduss
         as string tbs
@@ -177,6 +229,8 @@ namespace CTieba
     'Utils
     '////////////////////////////////////
     declare function md5( source as string ) as string
+    declare function unix_timestamp( a_time as double ) as integer
+    declare function unix_timestamp2double( a_time as integer ) as double
     declare function unix_millitimestamp( a_time as double ) as string
     declare function now_utc() as double
     declare function strrev( s as string ) as string

@@ -1,13 +1,12 @@
 #include "CTieba.bi"
 
 namespace CTieba
-    
     destructor CTiebaArray()
         this.clear()
     end destructor
     
     sub CTiebaArray.clear()
-        do : this.removeItem( 1 ) : loop until this.count = 0
+        do until this.count = 0 : this.removeItem( 1 ) : loop
     end sub
     
     sub CTiebaArray.addItem( lpObj as any ptr )
@@ -33,30 +32,41 @@ namespace CTieba
         return this.m_count
     end property
     
-    '////////////////////////////////////
-    'CTiebaBarArray
-    '////////////////////////////////////
-    sub CTiebaBarArray.removeItem( i as integer )
-        if this._removeItem_can_remove( i ) = 0 then return
-        delete( this.index( i ) )
-        this._removeItem_swap( i )
-    end sub
+    #macro MAKE_ARRAY_RM( x, e )
+        destructor x()
+            base.destructor()
+        end destructor
+        operator x.let( rhs as x )
+            this.m_count = rhs.m_count
+            this.items = reallocate( this.items, sizeof( any ptr ) * this.m_count )
+            this.me = rhs.me
+            if this.m_count = 0 then return
+            for i as integer = 0 to this.m_count - 1
+                dim as e ptr newelement = new e()
+                *newelement = *cast( e ptr, rhs.items[ i ] )
+                this.items[ i ] = newelement
+            next
+        end operator
+        sub x.removeItem( i as integer )
+            if this._removeItem_can_remove( i ) = 0 then return
+            delete( this.index( i ) )
+            this._removeItem_swap( i )
+        end sub
+        function x.index( i as integer ) as e ptr
+            return cast( e ptr, this.items[ i - 1 ] )
+        end function
+    #endmacro
     
-    function CTiebaBarArray.index( i as integer ) as CTiebaBar ptr
-        return cast( CTiebaBar ptr, this.items[ i - 1 ] )
-    end function
-    
     '////////////////////////////////////
-    'CTiebaUserArray
+    'CTieba***Array
     '////////////////////////////////////
-    sub CTiebaUserArray.removeItem( i as integer )
-        if this._removeItem_can_remove( i ) = 0 then return
-        delete( this.index( i ) )
-        this._removeItem_swap( i )
-    end sub
+    MAKE_ARRAY_RM( CTiebaSubPostArray, CTiebaSubPost )
+    MAKE_ARRAY_RM( CTiebaPostArray, CTiebaPost )
+    MAKE_ARRAY_RM( CTiebaThreadArray, CTiebaThread )
+    MAKE_ARRAY_RM( CTiebaBarArray, CTiebaBar )
+    MAKE_ARRAY_RM( CTiebaUserArray, CTiebaUser )
+    MAKE_ARRAY_RM( CTiebaGoodClassifyArray, CTiebaGoodClassify )
     
-    function CTiebaUserArray.index( i as integer ) as CTiebaUser ptr
-        return cast( CTiebaUser ptr, this.items[ i - 1 ] )
-    end function
-    
+    #undef MAKE_ARRAY_RM
+    #undef MAKE_ARRAY_RM_STRING
 end namespace

@@ -4,18 +4,11 @@
 namespace CTieba
     
     constructor CTiebaMe()
-        this.user = new CTiebaUser()
-        this.bars = new CTiebaBarArray()
-        this.http = new CTiebaHttp()
-        this.user->me = @this
-        this.bars->me = @this
-        this.http->me = @this
+        this.user.me = @this
+        this.sender.me = @this
     end constructor
     
     destructor CTiebaMe()
-        delete( this.http )
-        delete( this.bars )
-        delete( this.user )
     end destructor
     
     function CTiebaMe.isErr() as integer
@@ -46,133 +39,155 @@ namespace CTieba
         this.f_holded = 0
     end sub
     
+    #define json_str( obj, key ) from_utf8( *json_object_get_string( json_object_object_get( (obj), (key) ) ) )
+    #define json_int( obj, key ) json_object_get_int( json_object_object_get( (obj), (key) ) )
+    
     #macro PARSE_AND_SETERR_1( root )
-        if json_object_get_int( json_object_object_get( root, "error_code" ) ) <> 0 then
-            this.setErr( from_utf8( *json_object_get_string( json_object_object_get( root, "error_msg" ) ) ) )
+        if json_int( root, "error_code" ) <> 0 then
+            this.setErr( json_str( root, "error_msg" ) )
     #endmacro
     
     #macro PARSE_AND_SETERR_2( root )
-            json_object_put( root )
-            return
         endif
     #endmacro
     
     #macro PARSE_AND_REFRESHTBS( root )
-        this.tbs = json_to_fb_string( json_object_object_get( json_object_object_get( root, "anti" ), "tbs" ) )
+        assert(json_str( json_object_object_get( root, "anti" ), "vcode_stat" ) = "0" or _
+                json_str( json_object_object_get( root, "anti" ), "vcode_stat" ) = "")
+        this.tbs = json_str( json_object_object_get( root, "anti" ), "tbs" )
     #endmacro
     
-    function json_to_fb_string( obj as json_object ptr ) as string
-        return from_utf8( *json_object_get_string( obj ) )
-    end function
+    #macro for_json_array_each( i, root, key )
+        scope
+            dim as json_object ptr ___FJA___ARR___ = json_object_object_get( (root), (key) )
+            if ___FJA___ARR___ <> 0 then
+                for ___FJA___IDX___ as integer = 0 to json_object_array_length( ___FJA___ARR___ ) - 1
+                    dim as json_object ptr i = json_object_array_get_idx( ___FJA___ARR___, ___FJA___IDX___ )
+    #endmacro
+    #macro for_next()
+                next
+            endif
+        end scope
+    #endmacro
     
     sub CTiebaMe.login( bduss as string )
         this.clearErr()
         this.bduss = mid( bduss, instr( bduss, "=" ) + 1 )
-        this.http->http.open("http://c.tieba.baidu.com/c/s/login", "POST")
-        this.http->header_push( this.bduss )
-            this.http->header_add( "bdusstoken", this.bduss & "|" & "NULL" )
-            this.http->header_add( "channel_id", "" )
-            this.http->header_add( "channel_uid", "" )
-        this.http->http.send( this.http->header_pop() )
-        if this.http->http.state <> CLHS_COMPLETED then return
+        this.sender.http.open("http://c.tieba.baidu.com/c/s/login", "POST")
+        this.sender.header_push( this.bduss )
+            this.sender.header_add( "bdusstoken", this.bduss & "|" & "NULL" )
+            this.sender.header_add( "channel_id", "" )
+            this.sender.header_add( "channel_uid", "" )
+        this.sender.http.send( this.sender.header_pop() )
+        if this.sender.http.state <> CLHS_COMPLETED then this.setErr( "Network error." ) : return
         
-        this.user->id = ""
-        this.user->name = ""
-        dim as json_object ptr root = json_tokener_parse( this.http->http.responseString )
+        this.user.id = ""
+        this.user.name = ""
+        
+        dim as json_object ptr root = json_tokener_parse( this.sender.http.responseString )
+        
         PARSE_AND_SETERR_1( root )
             this.bduss = ""
+            json_object_put( root )
+            return
         PARSE_AND_SETERR_2( root )
         
         PARSE_AND_REFRESHTBS( root )
         
         dim as json_object ptr _user = json_object_object_get( root, "user" )
-            this.user->id = json_to_fb_string( json_object_object_get( _user, "id" ) )
-            this.user->name = json_to_fb_string( json_object_object_get( _user, "name" ) )
-        
+            this.user.id = json_str( _user, "id" )
+            this.user.name = json_str( _user, "name" )
         json_object_put( root )
         
-        'this.refreshBarsList()
-        '
-        'this.http->http.open("http://c.tieba.baidu.com/c/f/frs/page", "POST")
-        'this.http->header_push( this.bduss )
-        '    this.http->header_add( "kw", "ÐãÈ«ÖÐxÑ§" )
-        '    this.http->header_add( "pn", "50" )
-        'this.http->http.send( this.http->header_pop() )
-        '
-        'print json_decode(this.http->http.responseString)
-        'end
+        this.refreshBarsList()
     end sub
+    
+    function CTiebaMe.isLoggedIn() as integer
+        this.clearErr()
+        this.sender.http.open( "http://tieba.baidu.com/dc/common/tbs" )
+        this.sender.http.setRequestHeader( "Cookie", "BDUSS=" & this.bduss )
+        this.sender.http.send()
+        if this.sender.http.state <> CLHS_COMPLETED then this.setErr( "Network error." ) : return 0
+        dim as json_object ptr root = json_tokener_parse( this.sender.http.responseString )
+        dim _result as integer = json_int( root, "is_login" ) = 1
+        json_object_put( root )
+        return _result
+    end function
     
     sub CTiebaMe.refreshBarsList()
         this.clearErr()
-        this.http->http.open("http://c.tieba.baidu.com/c/f/forum/forumrecommend", "POST")
-        this.http->header_push( this.bduss )
-            this.http->header_add( "like_forum", "1" )
-            this.http->header_add( "recommend", "0" )
-            this.http->header_add( "topic", "0" )
-        this.http->http.send( this.http->header_pop() )
-        if this.http->http.state <> CLHS_COMPLETED then return
+        this.sender.http.open("http://c.tieba.baidu.com/c/f/forum/forumrecommend", "POST")
+        this.sender.header_push( this.bduss )
+            this.sender.header_add( "like_forum", "1" )
+            this.sender.header_add( "recommend", "0" )
+            this.sender.header_add( "thread", "0" )
+        this.sender.http.send( this.sender.header_pop() )
+        if this.sender.http.state <> CLHS_COMPLETED then this.setErr( "Network error." ) : return
         
-        this.bars->clear()
-        dim as json_object ptr root = json_tokener_parse( this.http->http.responseString )
+        this.user.likes.clear()
+        dim as json_object ptr root = json_tokener_parse( this.sender.http.responseString )
         PARSE_AND_SETERR_1( root )
+            json_object_put( root )
+            return
         PARSE_AND_SETERR_2( root )
         
-        dim as json_object ptr like_forums = json_object_object_get( root, "like_forum" )
-        for i as integer = 0 to json_object_array_length( like_forums ) - 1
-            dim as json_object ptr forums = json_object_array_get_idx( like_forums, i )
+        for_json_array_each( bar, root, "like_forum" )
             dim as CTiebaBar ptr ba = new CTiebaBar()
-            ba->id = json_to_fb_string( json_object_object_get( forums, "forum_id" ) )
-            ba->name = json_to_fb_string( json_object_object_get( forums, "forum_name" ) )
-            ba->isSign = json_object_get_int( json_object_object_get( forums, "isSign" ) )
-            ba->avatar = json_to_fb_string( json_object_object_get( forums, "avatar" ) )
-            ba->level = json_object_get_int( json_object_object_get( forums, "level_id" ) )
+            ba->id = json_str( bar, "forum_id" )
+            ba->name = json_str( bar, "forum_name" )
+            ba->isSign = json_int( bar, "isSign" )
+            ba->avatar = json_str( bar, "avatar" )
+            ba->level = json_int( bar, "level_id" )
             ba->isLike = 1
-            this.bars->addItem( ba )
-        next
+            ba->me = @this
+            this.user.likes.addItem( ba )
+        for_next()
+        
         json_object_put( root )
     end sub
     
-    sub CTiebaMe.signBar( bar as CTiebaBar, result as CTiebaSignResult )
+    function CTiebaMe.signBarX( bar as CTiebaBar ) as CTiebaSignResult
         this.clearErr()
-        this.http->http.open("http://c.tieba.baidu.com/c/c/forum/sign", "POST")
-        this.http->header_push( this.bduss )
-            this.http->header_add( "fid", bar.id )
-            this.http->header_add( "kw", bar.name )
-            this.http->header_add( "tbs", this.tbs )
-        this.http->http.send( this.http->header_pop() )
-        if this.http->http.state <> CLHS_COMPLETED then return
+        this.sender.http.open("http://c.tieba.baidu.com/c/c/forum/sign", "POST")
+        this.sender.header_push( this.bduss )
+            this.sender.header_add( "fid", bar.id )
+            this.sender.header_add( "kw", bar.name )
+            this.sender.header_add( "tbs", this.tbs )
+        this.sender.http.send( this.sender.header_pop() )
+        if this.sender.http.state <> CLHS_COMPLETED then this.setErr( "Network error." ) : return type<CTiebaSignResult>()
         
-        dim as CTiebaSignResult _result
-        dim as json_object ptr root = json_tokener_parse( this.http->http.responseString )
+        dim as json_object ptr root = json_tokener_parse( this.sender.http.responseString )
         PARSE_AND_SETERR_1( root )
+            json_object_put( root )
+            return type<CTiebaSignResult>()
         PARSE_AND_SETERR_2( root )
         
+        dim as CTiebaSignResult _result
         dim as json_object ptr info = json_object_object_get( root, "user_info" )
-        _result.bonus = json_object_get_int( json_object_object_get( info, "sign_bonus_point" ) )
-        _result.ordinal = json_object_get_int( json_object_object_get( info, "user_sign_rank" ) )
-        _result.continuous = json_object_get_int( json_object_object_get( info, "cont_sign_num" ) )
-        _result.total = json_object_get_int( json_object_object_get( info, "total_sign_num" ) )
-        _result.miss = json_object_get_int( json_object_object_get( info, "miss_sign_num" ) )
-        _result.orange = json_object_get_int( json_object_object_get( info, "is_org_name" ) )
-        _result.level_name = json_to_fb_string( json_object_object_get( info, "level_name" ) )
-        _result.levelup_target = json_object_get_int( json_object_object_get( info, "levelup_score" ) )
-        result = _result
+            _result.bonus = json_int( info, "sign_bonus_point" )
+            _result.ordinal = json_int( info, "user_sign_rank" )
+            _result.continuous = json_int( info, "cont_sign_num" )
+            _result.total = json_int( info, "total_sign_num" )
+            _result.miss = json_int( info, "miss_sign_num" )
+            _result.orange = json_int( info, "is_org_name" )
+            _result.level_name = json_str( info, "level_name" )
+            _result.levelup_target = json_int( info, "levelup_score" )
         json_object_put( root )
-    end sub
+        return _result
+    end function
     
     sub CTiebaMe.signBar( bar as CTiebaBar )
         dim temp as CTiebaSignResult
-        this.signBar( bar, temp )
+        temp = this.signBarX( bar )
     end sub
     
     sub CTiebaMe.signAllBars()
         this.clearErr()
         this.holdErr()
         
-        dim bars as CTieba.CTiebaBarArray ptr = this.bars
-        for i as integer = 1 to bars->count
-            dim bar as CTieba.CTiebaBar ptr = bars->index( i )
+        dim bars as CTieba.CTiebaBarArray = this.user.likes
+        for i as integer = 1 to bars.count
+            dim bar as CTieba.CTiebaBar ptr = bars.index( i )
             if bar->isSign = 0 then this.signBar( *bar )
         next
         
@@ -181,22 +196,116 @@ namespace CTieba
     
     sub CTiebaMe.refreshTbs()
         this.clearErr()
-        this.http->http.open( "http://tieba.baidu.com/dc/common/tbs" )
-        this.http->http.setRequestHeader( "Cookie", "BDUSS=" & this.bduss )
-        this.http->http.send()
-        if this.http->http.state <> CLHS_COMPLETED then return
-        
-        dim as json_object ptr root = json_tokener_parse( this.http->http.responseString )
-        if json_object_get_int( json_object_object_get( root, "is_login" ) ) <> 1 then
-            this.setErr( "Not logged in" )
-            json_object_put( root )
-            return
-        endif
-        this.tbs = json_to_fb_string( json_object_object_get( root, "tbs" ) )
+        this.sender.http.open( "http://tieba.baidu.com/dc/common/tbs" )
+        this.sender.http.setRequestHeader( "Cookie", "BDUSS=" & this.bduss )
+        this.sender.http.send()
+        if this.sender.http.state <> CLHS_COMPLETED then this.setErr( "Network error." ) : return
+        dim as json_object ptr root = json_tokener_parse( this.sender.http.responseString )
+        this.tbs = json_str( root, "tbs" )
         json_object_put( root )
     end sub
+    
+    function CTiebaMe.getBar( barName as string, pageNum as integer ) as CTiebaBar
+        this.clearErr()
+        this.sender.http.open("http://c.tieba.baidu.com/c/f/frs/page", "POST")
+        this.sender.header_push( this.bduss )
+            this.sender.header_add( "kw", barName )
+            this.sender.header_add( "pn", str(pageNum) )
+        this.sender.http.send( this.sender.header_pop() )
+        if this.sender.http.state <> CLHS_COMPLETED then this.setErr( "Network error." ) : return type<CTiebaBar>()
+        
+        open "px.java" for output as 1:print #1,this.sender.http.responseString:close 1
+        
+        dim as json_object ptr root = json_tokener_parse( this.sender.http.responseString )
+        PARSE_AND_SETERR_1( root )
+            json_object_put( root )
+            return type<CTiebaBar>()
+        PARSE_AND_SETERR_2( root )
+        
+        dim as CTiebaBar _result
+        _result.me = @this
+        dim as json_object ptr node
+        with _result
+          node = json_object_object_get( root, "forum" )
+            .id = json_str( node, "id" )
+            .name = json_str( node, "name" )
+            .avatar = json_str( node, "avatar" )
+            .isLike = json_int( node, "is_like" )
+            .isSign = json_int( json_object_object_get( json_object_object_get( node, "sign_in_info" ), "user_info" ), "is_sign_in" )
+            
+            .majorClass = json_str( node, "first_class" )
+            .minorClass = json_str( node, "second_class" )
+            .level = json_int( node, "user_level" ) ' the same as "level_id"
+            .levelName = json_str( node, "level_name" )
+            .currentScore = json_str( node, "cur_score" )
+            .levelupScore = json_str( node, "levelup_score" )
+            .memberCount = json_str( node, "member_num" )
+            .threadCount = json_str( node, "thread_num" )
+            .postCount = json_str( node, "post_num" )
+            for_json_array_each( gc, node, "good_classify" )
+                dim as CTiebaGoodClassify ptr u = new CTiebaGoodClassify()
+                u->id = json_str( gc, "class_id" )
+                u->name = json_str( gc, "class_name" )
+                u->me = @this
+                .goodClassify.addItem( u )
+            for_next()
+            
+            for_json_array_each( manager, node, "managers" )
+                dim as CTiebaUser ptr u = new CTiebaUser()
+                u->id = json_str( manager, "id" )
+                u->name = json_str( manager, "name" )
+                u->me = @this
+                .managers.addItem( u )
+            for_next()
+            
+            .slogan = json_str( node, "slogan" )
+            
+          node = json_object_object_get( root, "user" )
+            .isBlack = json_int( json_object_object_get( node, "balv" ), "is_black" )
+            .isBlock = json_int( json_object_object_get( node, "balv" ), "is_block" )
+            .daysToFree = json_int( json_object_object_get( node, "balv" ), "days_tofree" )
+            .isManager = json_int( node, "is_manager" )
+            
+            for_json_array_each( thread, root, "thread_list" )
+                dim as CTiebaThread ptr t = new CTiebaThread()
+                t->id = json_str( thread, "id" )
+                t->name = json_str( thread, "title" )
+                t->replyNum = json_int( thread, "reply_num" )
+                t->lastTime = unix_timestamp2double( json_int( thread, "last_time_int" ) )
+                t->isTop = json_int( thread, "is_top" )
+                t->isGood = json_int( thread, "is_good" )
+                t->isNtitle = json_int( thread, "is_ntitle" )
+                t->isMemberTop = json_int( thread, "is_membertop" )
+                t->isNotice = json_int( thread, "is_notice" )
+                t->isPortal = json_int( thread, "is_protal" )
+                t->isBakan = json_int( thread, "is_bakan" )
+                t->isVote = json_int( thread, "is_vote" )
+                t->isVoice = json_int( thread, "is_voice_thread" )
+                t->isActivity = json_int( thread, "is_activity" )
+                
+                dim as json_object ptr t_j = json_object_object_get( thread, "zan" )
+                t->zanNum = json_int( t_j, "num" )
+                for_json_array_each( zanEr, t_j, "liker_id" )
+                    dim as CTiebaUser ptr u = new CTiebaUser()
+                    u->id = from_utf8( *json_object_get_string( zanEr ) )
+                    t->zanId.addItem( u )
+                for_next()
+                t->lastZanTime = unix_timestamp2double( json_int( t_j, "last_time" ) )
+                
+                '//TODO: thread_list
+                .threadList.addItem( t )
+            for_next()
+        end with
+        
+        json_object_put( root )
+        return _result
+    end function
     
     #undef PARSE_AND_SETERR_1
     #undef PARSE_AND_SETERR_2
     #undef PARSE_AND_REFRESHTBS
+    #undef for_json_array_each
+    #undef for_next
+    #undef json_str
+    #undef json_int
 end namespace

@@ -132,6 +132,16 @@ namespace CTieba
         return datediff( "s", dateserial( 1970, 1, 1 ) + timeserial( 0, 0, 0 ), a_time )
     end function
     
+    function unix_timestamp2double( a_time as integer ) as double
+        dim fbutc as double
+        fbutc = dateadd( "s", a_time, dateserial( 1970, 1, 1 ) + timeserial( 0, 0, 0 ) )
+        dim systime as SYSTEMTIME, localsystime as SYSTEMTIME
+        systime = type( year( fbutc ), month( fbutc ), weekday( fbutc ), day( fbutc ), hour( fbutc ), minute( fbutc ), second( fbutc ), 0 )
+        SystemTimeToTzSpecificLocalTime( 0, @systime, @localsystime )
+        systime = localsystime
+        return dateserial( systime.wYear, systime.wMonth, systime.wDay ) + timeserial( systime.wHour, systime.wMinute, systime.wSecond )
+    end function
+    
     function unix_millitimestamp( a_time as double ) as string
         randomize
         return str( unix_timestamp( a_time ) ) & format( int( rnd * 1000 ), "000" )

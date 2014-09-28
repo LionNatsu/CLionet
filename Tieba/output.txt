@@ -1,1 +1,0 @@
-{"error_code":"3","error_msg":"该吧还未建立，去看看其他贴吧吧","info":[],"time":1408891459,"ctime":0,"logid":2659132352,"server_time":"10023"}

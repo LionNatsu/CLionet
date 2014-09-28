@@ -5,9 +5,9 @@ dim as CTieba.CTiebaMe lion
     do until eof(1)
         input #1, nam, current_bduss
         lion.login(current_bduss)
-        if lion.isErr() then continue do
+        if lion.isErr() then print "error", lion.getErr(): continue do
         lion.signAllBars()
         print nam, lion.user->name, lion.getErr()
     loop
     close #1
-'sleep
+sleep
