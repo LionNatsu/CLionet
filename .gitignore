@@ -1,6 +1,8 @@
 *.undo
 *.exe
+*.bat
 *.bduss
 *.pcapng
 *.a
 *.bin
+*.tmp

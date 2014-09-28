@@ -2,6 +2,7 @@
 #define __CLIONETHTTP_BI__
 #include "CLionet.bi"
 enum CLIONETHTTP_STATE
+    CLHS_ERROR = -1
     CLHS_STANDBY
     CLHS_CONNECTING
     CLHS_CONNECTED

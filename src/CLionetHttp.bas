@@ -62,7 +62,7 @@ sub CLionetHttp.onSocket( socketboku as CLionet ptr, msg as integer, errcode as 
                 boku->m_state = CLHS_WAITING
             endif
         case CLE_CLOSE
-            boku->SetState( CLHS_STANDBY )
+            boku->m_socket->closesocket()
         case CLE_READ
             if boku->m_state = CLHS_COMPLETED then WHAT_THE_HELL( "WHAT? MADAKA?" )
             boku->SetState( CLHS_RECEIVING )
@@ -204,7 +204,8 @@ function CLionetHttp.open( url as string, method as string, async as integer, ti
     this.m_header+= "Accept: */*" & NEWLINE
     'Create a socket (Class CLionet)
     
-    this.m_socket->closesocket()
+    this.m_state = CLHS_CONNECTING
+    
     this.m_socket->opensocket()
     this.m_socket->connect( this.m_host, this.m_port )
     '
@@ -224,7 +225,6 @@ function CLionetHttp.open( url as string, method as string, async as integer, ti
     this.m_recv_header_state = HEAD_NOTCOMPLETE
     this.m_responseHeader = ""
     
-    this.m_state = CLHS_CONNECTING
     if this.m_async = 0 then
         WaitForState( CLHS_CONNECTED, this.m_timeout )
     endif
