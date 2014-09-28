@@ -49,7 +49,7 @@ namespace CTieba
         end operator
         sub x.removeItem( i as integer )
             if this._removeItem_can_remove( i ) = 0 then return
-            delete( this.index( i ) )
+            delete this.index( i )
             this._removeItem_swap( i )
         end sub
         function x.index( i as integer ) as e ptr

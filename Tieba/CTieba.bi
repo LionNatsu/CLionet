@@ -124,15 +124,19 @@ namespace CTieba
     end type
     
     type CTiebaThread
-        as string id, name
+        declare constructor()
+        declare destructor()
+        as string id, title
         as integer replyNum
         as double lastTime
         as integer isTop, isGood, isNtitle, isMemberTop, isNotice
         as integer isPortal, isBakan, isVote, isVoice, isActivity
-        as string firstPostId, authorId, outline
+        as ctiebapost_f ptr firstPost
+        as ctiebauser_f ptr author
         as integer zanNum
         as CTiebaUserArray zanId
         as double lastZanTime
+        as string outline
         as ctiebame_f ptr me
     end type
     

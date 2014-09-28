@@ -225,6 +225,7 @@ namespace CTieba
         dim as CTiebaBar _result
         _result.me = @this
         dim as json_object ptr node
+        dim as json_object ptr subnode
         with _result
           node = json_object_object_get( root, "forum" )
             .id = json_str( node, "id" )
@@ -269,7 +270,7 @@ namespace CTieba
             for_json_array_each( thread, root, "thread_list" )
                 dim as CTiebaThread ptr t = new CTiebaThread()
                 t->id = json_str( thread, "id" )
-                t->name = json_str( thread, "title" )
+                t->title = json_str( thread, "title" )
                 t->replyNum = json_int( thread, "reply_num" )
                 t->lastTime = unix_timestamp2double( json_int( thread, "last_time_int" ) )
                 t->isTop = json_int( thread, "is_top" )
@@ -283,15 +284,19 @@ namespace CTieba
                 t->isVoice = json_int( thread, "is_voice_thread" )
                 t->isActivity = json_int( thread, "is_activity" )
                 
-                dim as json_object ptr t_j = json_object_object_get( thread, "zan" )
-                t->zanNum = json_int( t_j, "num" )
-                for_json_array_each( zanEr, t_j, "liker_id" )
+              subnode = json_object_object_get( thread, "zan" )
+                t->zanNum = json_int( subnode, "num" )
+                for_json_array_each( zanEr, subnode, "liker_id" )
                     dim as CTiebaUser ptr u = new CTiebaUser()
                     u->id = from_utf8( *json_object_get_string( zanEr ) )
                     t->zanId.addItem( u )
                 for_next()
-                t->lastZanTime = unix_timestamp2double( json_int( t_j, "last_time" ) )
+                t->lastZanTime = unix_timestamp2double( json_int( subnode, "last_time" ) )
                 
+              subnode = json_object_array_get_idx( json_object_object_get( thread, "abstract" ), 0 )
+                if subnode <> 0 then
+                    t->outline = json_str( subnode, "text" )
+                endif
                 '//TODO: thread_list
                 .threadList.addItem( t )
             for_next()
