@@ -1,7 +1,6 @@
 #ifndef __TIEBA_BI__
 #define __TIEBA_BI__
 #include "../inc/CLionetHttp.bi"
-#define TODO: rem
 '
 'namespace CTieba
 '

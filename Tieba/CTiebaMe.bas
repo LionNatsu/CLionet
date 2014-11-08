@@ -301,6 +301,24 @@ namespace CTieba
                 redim preserve .threadList( ubound( .threadList ) + 1 )
                 .threadList( ubound( .threadList ) ) = t
             for_next()
+            
+            dim as CTiebaUser users_temp()
+            for_json_array_each( thread, root, "user_list" )
+                dim as CTiebaUser t
+                t.id = json_sub_str( thread, "id" )
+                t.name = json_sub_str( thread, "name_show" )
+                t.avatar = "http://tb.himg.baidu.com/sys/portrait/item/" & json_sub_str( thread, "portrait" )
+                t.me = @this
+                redim preserve users_temp( ubound( users_temp ) + 1 )
+                users_temp( ubound( users_temp ) ) = t
+            for_next()
+            
+            for i as integer = 0 to ubound( .threadList )
+                dim as string elm_name = .threadList(i).author.id
+                for j as integer = 0 to ubound( users_temp )
+                    'TODO
+                next
+            next
         end with
         json_free( root )
         return _result
