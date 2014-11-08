@@ -29,28 +29,6 @@ namespace CTieba
     type ctiebauser_f as CTiebaUser
     type ctiebagoodclassify_f as CTiebaGoodClassify
     
-    '////////////////////////////////////
-    'Array structure for objects
-    '////////////////////////////////////
-    type CTiebaArray
-      public:
-        declare destructor()
-        declare operator let( rhs as CTiebaArray )
-        declare sub clear()
-        declare sub addItem( lpObj as any ptr )
-        declare sub removeItem( i as integer )
-        declare property count() as integer
-        declare function index( i as integer ) as any ptr
-        custom_destructor as sub( boku as any ptr )
-        custom_copy as function( kare as any ptr ) as any ptr
-        as ctiebame_f ptr me
-      protected:
-        declare function _removeItem_can_remove( i as integer ) as integer
-        declare sub _removeItem_swap( i as integer )
-        as any ptr ptr items
-        as integer m_count
-    end type
-        
     '////////////////////
     type CTiebaGoodClassify
         as string id, name
@@ -73,10 +51,6 @@ namespace CTieba
     '////////////////////////////////////
     
     type CTiebaUser
-        declare static function custom_copy( kare as any ptr ) as any ptr
-        declare static sub custom_destructor( boku as any ptr )
-        declare static function CreateArray() as CTiebaArray
-        
         as string id, name
         
         '// Details
@@ -84,10 +58,22 @@ namespace CTieba
         as ctiebame_f ptr me
     end type
     
+    type CTiebaThread
+        as string id, title
+        as integer replyNum
+        as double lastTime
+        as integer isTop, isGood, isNtitle, isMemberTop, isNotice
+        as integer isPortal, isBakan, isVote, isVoice, isActivity
+        as string firstPostId
+        as CTiebaUser author
+        as integer zanNum
+        as string zanIds(any)
+        as double lastZanTime
+        as string outline
+        as ctiebame_f ptr me
+    end type
+    
     type CTiebaBar
-        declare static function custom_copy( kare as any ptr ) as any ptr
-        declare static sub custom_destructor( boku as any ptr )
-        declare static function CreateArray() as CTiebaArray
         as string id, name
         as string avatar
         as integer isLike, isSign
@@ -100,42 +86,18 @@ namespace CTieba
         as string majorClass, minorClass
         as string slogan
         as string memberCount, threadCount, postCount
-        as CTiebaArray  managers
+        as CTiebaUser managers(any)
         
-        as CTiebaArray  goodClassify
-        as integer      currentGoodClassify
+        as CTiebaGoodClassify  goodClassify(any)
+        as integer currentGoodClassify
         
-        as CTiebaArray  threadList
+        as CTiebaThread  threadList(any)
         as CTiebaPage   pageInfo
         
         as ctiebame_f ptr me
     end type
     
-    type CTiebaThread
-        declare static function custom_copy( kare as any ptr ) as any ptr
-        declare static sub custom_destructor( boku as any ptr )
-        declare static function CreateArray() as CTiebaArray
-        declare constructor()
-        declare destructor()
-        declare operator let( rhs as CTiebaThread )
-        as string id, title
-        as integer replyNum
-        as double lastTime
-        as integer isTop, isGood, isNtitle, isMemberTop, isNotice
-        as integer isPortal, isBakan, isVote, isVoice, isActivity
-        as string firstPostId
-        as ctiebauser_f ptr author
-        as integer zanNum
-        as CTiebaArray zanIds
-        as double lastZanTime
-        as string outline
-        as ctiebame_f ptr me
-    end type
-    
     type CTiebaPost
-        declare static function custom_copy( kare as any ptr ) as any ptr
-        declare static sub custom_destructor( boku as any ptr )
-        declare static function CreateArray() as CTiebaArray
         'TODO
         as string id
         as CTiebaUser author
@@ -144,9 +106,6 @@ namespace CTieba
     end type
     
     type CTiebaSubPost
-        declare static function custom_copy( kare as any ptr ) as any ptr
-        declare static sub custom_destructor( boku as any ptr )
-        declare static function CreateArray() as CTiebaArray
         'TODO
         as string id
         as ctiebame_f ptr me
@@ -208,7 +167,7 @@ namespace CTieba
         
         as CTiebaHttp sender
         as CTiebaUser user
-        as CTiebaArray likes
+        as CTiebaBar likes(any)
         
         as string bduss
         as string tbs

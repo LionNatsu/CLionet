@@ -1,5 +1,4 @@
 #include "CTieba.bi"
-#include "json-c/json.bi"
 
 namespace CTieba
     

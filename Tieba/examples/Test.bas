@@ -11,9 +11,7 @@ print left(current_bduss,5)
 lion.login(current_bduss)
 print lion.user.name
 bar=lion.getBar("ÐãÈ«ÖÐÑ§")
-print "FFFFFFFFFFFFFFFFFFFFFFFF"
-for i as integer = 1 to bar.threadList.count
-    print cast( integer ptr, bar.threadList.index(i) )
+for i as integer = 1 to ubound(bar.threadList)
+    print bar.threadList(i).title
 next
-print bar.isManager
 sleep

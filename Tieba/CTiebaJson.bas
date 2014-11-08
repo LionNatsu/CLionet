@@ -1,6 +1,9 @@
 #include "CTieba.bi"
-#include "json-c/json.bi"
-
+#inclib "json"
+#include "json-c/json_object.bi"
+Extern "C"
+declare function json_tokener_parse (byval str_ as zstring ptr) as json_object ptr
+End Extern
 namespace CTieba
     function json_parse( json as string ) as any ptr
         return json_tokener_parse( json )

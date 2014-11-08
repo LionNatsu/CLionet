@@ -1,7 +1,5 @@
 #ifndef __CLIONET_BI__
 #define __CLIONET_BI__
-#include once "windows.bi"
-#include once "win/winsock2.bi"
 #undef opensocket
 
 enum CLIONET_MODE
@@ -51,7 +49,7 @@ type CLionet extends object
     
     declare virtual function accept() as integer
     declare virtual function accept( scklistener as CLionet ptr ) as integer
-    declare virtual function accept( scklistener as SOCKET ) as integer
+    declare virtual function accept( scklistener as integer ) as integer
     
     declare virtual function send( in_buf as any ptr, length as integer ) as integer
     declare virtual function recv( out_buf as any ptr, length as integer, f_peek as integer = 0 ) as integer
@@ -62,7 +60,7 @@ type CLionet extends object
     declare virtual function recvfrom( out_buf as any ptr, length as integer, out_addr as uinteger ptr = 0 ) as integer
     declare virtual function recvfrom( out_buf as any ptr, length as integer, out_addr as zstring ptr ptr = 0 ) as integer
     
-    declare virtual property thesocket() as SOCKET
+    declare virtual property thesocket() as integer
     declare virtual property remoteip() as string
     declare virtual property remoteport() as ushort
     declare virtual property localip() as string
@@ -86,9 +84,9 @@ type CLionet extends object
     declare virtual function bind( lpName as any ptr ) as integer
     declare virtual sub attachEvent()
     declare virtual sub detachEvent()
-    m_socket as SOCKET
-    m_event  as HANDLE
-    m_thread as HANDLE
+    m_socket as integer
+    m_event  as any ptr
+    m_thread as any ptr
     async_mode as integer
     flag_thread as integer
 end type

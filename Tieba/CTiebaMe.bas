@@ -5,7 +5,6 @@ namespace CTieba
     constructor CTiebaMe()
         this.user.me = @this
         this.sender.me = @this
-        this.likes.me = @this
     end constructor
     
     destructor CTiebaMe()
@@ -122,7 +121,7 @@ namespace CTieba
         this.sender.http.send( this.sender.header_pop() )
         if this.sender.http.state <> CLHS_COMPLETED then this.setErr( "Network error." ) : return
         
-        this.likes.clear()
+        erase this.likes
         dim as any ptr root = json_parse( this.sender.http.responseString )
         PARSE_AND_SETERR_1( root )
             json_free( root )
@@ -130,15 +129,16 @@ namespace CTieba
         PARSE_AND_SETERR_2( root )
         
         for_json_array_each( bar, root, "like_forum" )
-            dim as CTiebaBar ptr ba = new CTiebaBar()
-            ba->id = json_sub_str( bar, "forum_id" )
-            ba->name = json_sub_str( bar, "forum_name" )
-            ba->isSign = json_sub_int( bar, "isSign" )
-            ba->avatar = json_sub_str( bar, "avatar" )
-            ba->level = json_sub_int( bar, "level_id" )
-            ba->isLike = 1
-            ba->me = @this
-            this.likes.addItem( ba )
+            dim as CTiebaBar ba
+            ba.id = json_sub_str( bar, "forum_id" )
+            ba.name = json_sub_str( bar, "forum_name" )
+            ba.isSign = json_sub_int( bar, "isSign" )
+            ba.avatar = json_sub_str( bar, "avatar" )
+            ba.level = json_sub_int( bar, "level_id" )
+            ba.isLike = 1
+            ba.me = @this
+            redim preserve this.likes( ubound( this.likes ) + 1 )
+            this.likes( ubound( this.likes ) ) = ba
         for_next()
         
         json_free( root )
@@ -183,10 +183,8 @@ namespace CTieba
         this.clearErr()
         this.holdErr()
         
-        dim bars as CTieba.CTiebaArray = this.likes
-        for i as integer = 1 to bars.count
-            dim bar as CTieba.CTiebaBar ptr = bars.index( i )
-            if bar->isSign = 0 then this.signBar( *bar )
+        for i as integer = 0 to ubound( this.likes )
+            if this.likes(i).isSign = 0 then this.signBar( this.likes(i) )
         next
         
         this.unholdErr()
@@ -242,19 +240,21 @@ namespace CTieba
             .threadCount = json_sub_str( node, "thread_num" )
             .postCount = json_sub_str( node, "post_num" )
             for_json_array_each( gc, node, "good_classify" )
-                dim as CTiebaGoodClassify ptr u = new CTiebaGoodClassify()
-                u->id = json_sub_str( gc, "class_id" )
-                u->name = json_sub_str( gc, "class_name" )
-                u->me = @this
-                .goodClassify.addItem( u )
+                dim as CTiebaGoodClassify u
+                u.id = json_sub_str( gc, "class_id" )
+                u.name = json_sub_str( gc, "class_name" )
+                u.me = @this
+                redim preserve .goodClassify( ubound( .goodClassify ) + 1 )
+                .goodClassify( ubound( .goodClassify ) ) = u
             for_next()
             
             for_json_array_each( manager, node, "managers" )
-                dim as CTiebaUser ptr u = new CTiebaUser()
-                u->id = json_sub_str( manager, "id" )
-                u->name = json_sub_str( manager, "name" )
-                u->me = @this
-                .managers.addItem( u )
+                dim as CTiebaUser u
+                u.id = json_sub_str( manager, "id" )
+                u.name = json_sub_str( manager, "name" )
+                u.me = @this
+                redim preserve .managers( ubound( .managers ) + 1 )
+                .managers( ubound( .managers ) ) = u
             for_next()
             
             .slogan = json_sub_str( node, "slogan" )
@@ -266,45 +266,43 @@ namespace CTieba
             .isManager = json_sub_int( node, "is_manager" )
             
             for_json_array_each( thread, root, "thread_list" )
-                dim as CTiebaThread ptr t = new CTiebaThread()
-                t->id = json_sub_str( thread, "id" )
-                t->title = json_sub_str( thread, "title" )
-                t->replyNum = json_sub_int( thread, "reply_num" )
-                t->lastTime = unix_timestamp2double( json_sub_int( thread, "last_time_int" ) )
-                t->isTop = json_sub_int( thread, "is_top" )
-                t->isGood = json_sub_int( thread, "is_good" )
-                t->isNtitle = json_sub_int( thread, "is_ntitle" )
-                t->isMemberTop = json_sub_int( thread, "is_membertop" )
-                t->isNotice = json_sub_int( thread, "is_notice" )
-                t->isPortal = json_sub_int( thread, "is_protal" )
-                t->isBakan = json_sub_int( thread, "is_bakan" )
-                t->isVote = json_sub_int( thread, "is_vote" )
-                t->isVoice = json_sub_int( thread, "is_voice_thread" )
-                t->isActivity = json_sub_int( thread, "is_activity" )
+                dim as CTiebaThread t
+                t.id = json_sub_str( thread, "id" )
+                t.title = json_sub_str( thread, "title" )
+                t.replyNum = json_sub_int( thread, "reply_num" )
+                t.lastTime = unix_timestamp2double( json_sub_int( thread, "last_time_int" ) )
+                t.isTop = json_sub_int( thread, "is_top" )
+                t.isGood = json_sub_int( thread, "is_good" )
+                t.isNtitle = json_sub_int( thread, "is_ntitle" )
+                t.isMemberTop = json_sub_int( thread, "is_membertop" )
+                t.isNotice = json_sub_int( thread, "is_notice" )
+                t.isPortal = json_sub_int( thread, "is_protal" )
+                t.isBakan = json_sub_int( thread, "is_bakan" )
+                t.isVote = json_sub_int( thread, "is_vote" )
+                t.isVoice = json_sub_int( thread, "is_voice_thread" )
+                t.isActivity = json_sub_int( thread, "is_activity" )
                 
               subnode = json_sub( thread, "zan" )
-                t->zanNum = json_sub_int( subnode, "num" )
+                t.zanNum = json_sub_int( subnode, "num" )
                 
                 for_json_array_each( zanEr, subnode, "liker_id" )
-                    dim as CTiebaUser ptr u = new CTiebaUser()
-                    u->id = json_str( zanEr )
-                    u->me = @this
-                    t->zanIds.addItem( u )
+                    redim preserve t.zanIds( ubound( t.zanIds ) + 1 )
+                    t.zanIds( ubound( t.zanIds ) ) = json_str( zanEr )
                 for_next()
                 
-                t->lastZanTime = unix_timestamp2double( json_sub_int( subnode, "last_time" ) )
-                t->outline = json_sub_str( json_arridx( json_sub( thread, "abstract" ), 0 ), "text" )
+                t.lastZanTime = unix_timestamp2double( json_sub_int( subnode, "last_time" ) )
+                t.outline = json_sub_str( json_arridx( json_sub( thread, "abstract" ), 0 ), "text" )
                 
-                t->firstPostId = json_sub_str( thread, "first_post_id" )
-                t->author->id = json_sub_str( thread, "author_id" )
+                t.firstPostId = json_sub_str( thread, "first_post_id" )
+                t.author.id = json_sub_str( thread, "author_id" )
                 '//TODO: thread_list
                 
-                t->me = @this
-                .threadList.addItem( t )
+                t.me = @this
+                redim preserve .threadList( ubound( .threadList ) + 1 )
+                .threadList( ubound( .threadList ) ) = t
             for_next()
         end with
         json_free( root )
-        print "x"
         return _result
     end function
     

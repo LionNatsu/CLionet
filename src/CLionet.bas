@@ -1,7 +1,7 @@
 #include "../inc/CLionet.bi"
 
-#include once "windows.bi"
-#include once "win/winsock2.bi"
+#include "windows.bi"
+#include "win/winsock2.bi"
 #undef opensocket
 
 '//////////////////   {con|de}structor   //////////////////////////
@@ -76,7 +76,7 @@ function CLionet.accept( scklistener as CLionet ptr ) as integer
 end function
 
 'from native socket
-function CLionet.accept( scklistener as SOCKET ) as integer
+function CLionet.accept( scklistener as integer ) as integer
     this.detachEvent()
     this.closesocket()
     this.m_socket = .accept( scklistener, null, null )
@@ -220,7 +220,7 @@ function CLionet.closesocket() as integer
 end function
 
 'return the socket.
-property CLionet.thesocket() as SOCKET
+property CLionet.thesocket() as integer
     return this.m_socket
 end property
 
