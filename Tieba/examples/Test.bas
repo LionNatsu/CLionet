@@ -7,10 +7,13 @@ dim as string nam, current_bduss
 
 dim as CTieba.CTiebaMe lion
 dim as CTieba.CTiebaBar bar
-print current_bduss
+print left(current_bduss,5)
 lion.login(current_bduss)
 print lion.user.name
 bar=lion.getBar("ÐãÈ«ÖÐÑ§")
-print lion.user.name
-'print bar.isManager
+print "FFFFFFFFFFFFFFFFFFFFFFFF"
+for i as integer = 1 to bar.threadList.count
+    print cast( integer ptr, bar.threadList.index(i) )
+next
+print bar.isManager
 sleep

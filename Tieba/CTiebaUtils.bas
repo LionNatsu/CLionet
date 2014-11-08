@@ -97,7 +97,7 @@ namespace CTieba
         return ret
     end function
     
-    function json_decode( source as string ) as string
+    function _json_str_decode( source as string ) as string
         dim as string utf8_buffer, ret
         dim as integer i
         do while i < len( source )

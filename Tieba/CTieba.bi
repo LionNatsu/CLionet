@@ -32,41 +32,24 @@ namespace CTieba
     '////////////////////////////////////
     'Array structure for objects
     '////////////////////////////////////
-    type CTiebaArray extends object
+    type CTiebaArray
       public:
+        declare destructor()
+        declare operator let( rhs as CTiebaArray )
         declare sub clear()
-        declare virtual sub addItem( lpObj as any ptr )
-        declare abstract sub removeItem( i as integer )
+        declare sub addItem( lpObj as any ptr )
+        declare sub removeItem( i as integer )
         declare property count() as integer
+        declare function index( i as integer ) as any ptr
+        custom_destructor as sub( boku as any ptr )
+        custom_copy as function( kare as any ptr ) as any ptr
         as ctiebame_f ptr me
       protected:
-        declare destructor()
         declare function _removeItem_can_remove( i as integer ) as integer
         declare sub _removeItem_swap( i as integer )
         as any ptr ptr items
         as integer m_count
     end type
-    
-        '////////////////////////////////////
-        'CTieba***Array
-        '////////////////////////////////////
-        #macro MAKE_ARRAY_RM( x, e )
-            type x extends CTiebaArray
-                declare destructor()
-                declare sub removeItem( i as integer )
-                declare function index( i as integer ) as e ptr
-                declare operator let( rhs as x )
-            end type
-        #endmacro
-        
-        MAKE_ARRAY_RM( CTiebaSubPostArray, ctiebasubpost_f )
-        MAKE_ARRAY_RM( CTiebaPostArray, ctiebapost_f )
-        MAKE_ARRAY_RM( CTiebaThreadArray, ctiebathread_f )
-        MAKE_ARRAY_RM( CTiebaBarArray, ctiebabar_f )
-        MAKE_ARRAY_RM( CTiebaUserArray, ctiebauser_f )
-        MAKE_ARRAY_RM( CTiebaGoodClassifyArray, ctiebagoodclassify_f )
-        
-        #undef MAKE_ARRAY_RM
         
     '////////////////////
     type CTiebaGoodClassify
@@ -90,15 +73,21 @@ namespace CTieba
     '////////////////////////////////////
     
     type CTiebaUser
+        declare static function custom_copy( kare as any ptr ) as any ptr
+        declare static sub custom_destructor( boku as any ptr )
+        declare static function CreateArray() as CTiebaArray
+        
         as string id, name
         
         '// Details
         as string avatar
-        as CTiebaBarArray likes
         as ctiebame_f ptr me
     end type
     
     type CTiebaBar
+        declare static function custom_copy( kare as any ptr ) as any ptr
+        declare static sub custom_destructor( boku as any ptr )
+        declare static function CreateArray() as CTiebaArray
         as string id, name
         as string avatar
         as integer isLike, isSign
@@ -111,36 +100,42 @@ namespace CTieba
         as string majorClass, minorClass
         as string slogan
         as string memberCount, threadCount, postCount
+        as CTiebaArray  managers
         
-        as CTiebaGoodClassifyArray  goodClassify
-        as integer                  currentGoodClassify
+        as CTiebaArray  goodClassify
+        as integer      currentGoodClassify
         
-        as CTiebaUserArray          managers
-        
-        as CTiebaThreadArray        threadList
-        as CTiebaPage               pageInfo
+        as CTiebaArray  threadList
+        as CTiebaPage   pageInfo
         
         as ctiebame_f ptr me
     end type
     
     type CTiebaThread
+        declare static function custom_copy( kare as any ptr ) as any ptr
+        declare static sub custom_destructor( boku as any ptr )
+        declare static function CreateArray() as CTiebaArray
         declare constructor()
         declare destructor()
+        declare operator let( rhs as CTiebaThread )
         as string id, title
         as integer replyNum
         as double lastTime
         as integer isTop, isGood, isNtitle, isMemberTop, isNotice
         as integer isPortal, isBakan, isVote, isVoice, isActivity
-        as ctiebapost_f ptr firstPost
+        as string firstPostId
         as ctiebauser_f ptr author
         as integer zanNum
-        as CTiebaUserArray zanId
+        as CTiebaArray zanIds
         as double lastZanTime
         as string outline
         as ctiebame_f ptr me
     end type
     
     type CTiebaPost
+        declare static function custom_copy( kare as any ptr ) as any ptr
+        declare static sub custom_destructor( boku as any ptr )
+        declare static function CreateArray() as CTiebaArray
         'TODO
         as string id
         as CTiebaUser author
@@ -149,6 +144,9 @@ namespace CTieba
     end type
     
     type CTiebaSubPost
+        declare static function custom_copy( kare as any ptr ) as any ptr
+        declare static sub custom_destructor( boku as any ptr )
+        declare static function CreateArray() as CTiebaArray
         'TODO
         as string id
         as ctiebame_f ptr me
@@ -199,7 +197,7 @@ namespace CTieba
         declare sub login( bduss as string )
         declare function isLoggedIn() as integer
         
-        declare sub refreshBarsList()
+        declare sub refreshLikesList()
         declare sub refreshTbs()
         
         declare sub signBar( bar as CTiebaBar )
@@ -210,6 +208,7 @@ namespace CTieba
         
         as CTiebaHttp sender
         as CTiebaUser user
+        as CTiebaArray likes
         
         as string bduss
         as string tbs
@@ -242,6 +241,16 @@ namespace CTieba
     declare function from_utf8( source as string ) as string
     declare function from_unicode( source as string ) as string
     declare function urlencode( source as string ) as string
-    declare function json_decode( source as string ) as string
+    declare function _json_str_decode( source as string ) as string
+    
+    declare function json_parse( json as string ) as any ptr
+    declare function json_sub_str( obj as any ptr, key as string ) as string
+    declare function json_str( obj as any ptr ) as string
+    declare function json_sub_int( obj as any ptr, key as string ) as integer
+    declare function json_int( obj as any ptr ) as integer
+    declare function json_sub( obj as any ptr, key as string ) as any ptr
+    declare function json_arrlen( obj as any ptr ) as integer
+    declare function json_arridx( obj as any ptr, idx as integer ) as any ptr
+    declare sub json_free( json as any ptr )
 end namespace
 #endif

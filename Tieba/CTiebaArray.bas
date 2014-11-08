@@ -5,6 +5,20 @@ namespace CTieba
         this.clear()
     end destructor
     
+    operator CTiebaArray.let( rhs as CTiebaArray )
+        print "-"
+        this.destructor()
+        CopyMemory( @this, @rhs, sizeof( CTiebaArray ) )
+        if custom_copy <> 0 then
+            this.items = allocate( sizeof( any ptr ) * this.m_count )
+            if this.m_count = 0 then return
+            for i as integer = 0 to this.m_count - 1
+                print "-"
+                this.items[ i - 1 ] = this.custom_copy( rhs.items[ i - 1 ] )
+            next
+        endif
+    end operator
+    
     sub CTiebaArray.clear()
         do until this.count = 0 : this.removeItem( 1 ) : loop
     end sub
@@ -16,9 +30,23 @@ namespace CTieba
         this.items[ this.m_count - 1 ] = lpObj
     end sub
     
+    function CTiebaArray.index( i as integer ) as any ptr
+        return this.items[ i - 1 ]
+    end function
+    
+    sub CTiebaArray.removeItem( i as integer )
+        if this._removeItem_can_remove( i ) = 0 then return
+        if custom_destructor <> 0 then custom_destructor( this.index( i ) )
+        this._removeItem_swap( i )
+    end sub
+    
+    property CTiebaArray.count() as integer
+        return this.m_count
+    end property
+    
     function CTiebaArray._removeItem_can_remove( i as integer ) as integer
-        if i > this.m_count then return 0
         if this.m_count = 0 then return 0
+        if i > this.m_count then return 0
         return -1
     end function
     
@@ -28,45 +56,31 @@ namespace CTieba
         this.items = reallocate( this.items, sizeof( any ptr ) * this.m_count )
     end sub
     
-    property CTiebaArray.count() as integer
-        return this.m_count
-    end property
-    
-    #macro MAKE_ARRAY_RM( x, e )
-        destructor x()
-            base.destructor()
-        end destructor
-        operator x.let( rhs as x )
-            this.m_count = rhs.m_count
-            this.items = reallocate( this.items, sizeof( any ptr ) * this.m_count )
-            this.me = rhs.me
-            if this.m_count = 0 then return
-            for i as integer = 0 to this.m_count - 1
-                dim as e ptr newelement = new e()
-                *newelement = *cast( e ptr, rhs.items[ i ] )
-                this.items[ i ] = newelement
-            next
-        end operator
-        sub x.removeItem( i as integer )
-            if this._removeItem_can_remove( i ) = 0 then return
-            delete this.index( i )
-            this._removeItem_swap( i )
-        end sub
-        function x.index( i as integer ) as e ptr
-            return cast( e ptr, this.items[ i - 1 ] )
-        end function
+'///////////////////////////////////////////////////////////////////////////////////////
+'/// Instances
+    #macro __DEFINE_ARRAY_FUNCTIONS__( n )
+    function n.custom_copy( kare as any ptr ) as any ptr
+        dim as n ptr newp = new n()
+        *newp = *cast( n ptr, kare )
+        print #n, hex(kare) ;" -> "; hex(newp)
+        return newp
+    end function
+    sub n.custom_destructor( boku as any ptr )
+        print #n; boku;" deleted"
+        delete cast( n ptr, boku )
+    end sub
+    function n.CreateArray() as CTiebaArray
+        dim as CTiebaArray s
+        print #n; " Create"
+        s.custom_destructor = procptr( n.custom_destructor )
+        s.custom_copy = procptr( n.custom_copy )
+        return s
+    end function
     #endmacro
     
-    '////////////////////////////////////
-    'CTieba***Array
-    '////////////////////////////////////
-    MAKE_ARRAY_RM( CTiebaSubPostArray, CTiebaSubPost )
-    MAKE_ARRAY_RM( CTiebaPostArray, CTiebaPost )
-    MAKE_ARRAY_RM( CTiebaThreadArray, CTiebaThread )
-    MAKE_ARRAY_RM( CTiebaBarArray, CTiebaBar )
-    MAKE_ARRAY_RM( CTiebaUserArray, CTiebaUser )
-    MAKE_ARRAY_RM( CTiebaGoodClassifyArray, CTiebaGoodClassify )
-    
-    #undef MAKE_ARRAY_RM
-    #undef MAKE_ARRAY_RM_STRING
+    __DEFINE_ARRAY_FUNCTIONS__( CTiebaUser )
+    __DEFINE_ARRAY_FUNCTIONS__( CTiebaBar )
+    __DEFINE_ARRAY_FUNCTIONS__( CTiebaThread )
+    __DEFINE_ARRAY_FUNCTIONS__( CTiebaPost )
+    __DEFINE_ARRAY_FUNCTIONS__( CTiebaSubPost )
 end namespace
