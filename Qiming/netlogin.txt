@@ -1,9 +1,0 @@
-HTTP/1.1 200 OK
-Date: Mon, 04 Aug 2014 16:00:20 GMT
-Content-Type: text/xml;charset=UTF-8
-Content-Length: 659
-Connection: keep-alive
-Set-Cookie: JSESSIONID=C5CE4B60C05760CD2D94550483CAD9EC; Path=/
-Set-Cookie: SERVERID=6887c6cd50b1c1f1cd7c76b03573a82e|1407170033|1407170033;Path=/
-
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><loginResponse xmlns="http://webservice.common.athena.mstchina.com/"><return>[{"result":{"authid":"1111132","flag":"success","gatherInfo":"false","kckList":[{"bmd":"ShiXiao14432","kck_mc":"时效卡广东体验区高中二年级","kck_no":"","kckid":0}],"macstr":"","monitordataList":[],"msg":"5EBBDE59B6E38C9B32B886F0879C2A47","paperList":[],"patchList":[],"qyNjList":[],"structList":[],"supportMessage":"","tzList":[],"userid":"1111132","username":"Lion Yang","xtggList":[],"yhmsgList":[],"zdFblbList":[],"zdJclxList":[]}}]</return></loginResponse></soap:Body></soap:Envelope>

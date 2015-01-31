@@ -1,9 +1,0 @@
-HTTP/1.1 200 OK
-Date: Mon, 04 Aug 2014 16:33:52 GMT
-Content-Type: text/xml;charset=UTF-8
-Content-Length: 518
-Connection: keep-alive
-Set-Cookie: JSESSIONID=C5CE4B60C05760CD2D94550483CAD9EC; Path=/
-Set-Cookie: SERVERID=6887c6cd50b1c1f1cd7c76b03573a82e|1407170033|1407170033;Path=/
-
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><getPatchListResponse xmlns="http://webservice.common.athena.mstchina.com/"><return>[{"result":{"authid":"","flag":"success","gatherInfo":"","kckList":[],"macstr":"","monitordataList":[],"msg":"","paperList":[],"patchList":[],"qyNjList":[],"structList":[],"supportMessage":"","tzList":[],"userid":"","username":"","xtggList":[],"yhmsgList":[],"zdFblbList":[],"zdJclxList":[]}}]</return></getPatchListResponse></soap:Body></soap:Envelope>

@@ -28,15 +28,15 @@ constructor CLionetHttp()
     this.m_4k_buffer = allocate( 4100 )
     this.m_event_waitfor = 0
     this.m_event_statechange = CreateEvent( 0, 0, 0, 0 )
-    InitializeCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_header_critical ) )
-    InitializeCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_buffer_critical ) )
+    this.m_header_critical = mutexcreate()
+    this.m_buffer_critical = mutexcreate()
     this.m_socket->async = CLM_EVENTSELECT
 end constructor
 
 destructor CLionetHttp()
     delete this.m_socket
-    EnterCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_header_critical ) )
-    EnterCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_buffer_critical ) )
+    mutexlock( this.m_header_critical )
+    mutexlock( this.m_buffer_critical )
     deallocate( this.m_4k_buffer )
     deallocate( this.m_recv_header )
     deallocate( this.m_recv_buffer )
@@ -45,11 +45,11 @@ destructor CLionetHttp()
     this.m_recv_header = 0
     this.m_recv_buffer = 0
     this.m_recv_chunk = 0
-    LeaveCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_buffer_critical ) )
-    LeaveCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_header_critical ) )
+    mutexunlock( this.m_buffer_critical )
+    mutexunlock( this.m_header_critical )
     CloseHandle( this.m_event_statechange )
-    DeleteCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_header_critical ) )
-    DeleteCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_buffer_critical ) )
+    mutexdestroy( this.m_header_critical )
+    mutexdestroy( this.m_buffer_critical )
 end destructor
 
 sub CLionetHttp.onSocket( socketboku as CLionet ptr, msg as integer, errcode as integer )
@@ -70,6 +70,7 @@ sub CLionetHttp.onSocket( socketboku as CLionet ptr, msg as integer, errcode as 
             boku->SetState( CLHS_RECEIVING )
             dim as byte ptr _4kbuffer = boku->m_4k_buffer
             dim as integer _size = boku->m_socket->recv( _4kbuffer, 4096 )
+            if _size = -1 then boku->m_socket->closesocket() : print boku->responseString : exit sub
             if boku->m_recv_header_state = HEAD_NOTCOMPLETE then
                 'Search the terminator of header
                 dim as integer header_ending_pos
@@ -94,11 +95,11 @@ sub CLionetHttp.onSocket( socketboku as CLionet ptr, msg as integer, errcode as 
                 if header_ending_pos <> 0 then
                     'There's the terminator.
                     'header
-                    EnterCriticalSection( cast( CRITICAL_SECTION ptr, @boku->m_header_critical ) )
+                    mutexlock( boku->m_header_critical )
                         boku->m_recv_header = reallocate( boku->m_recv_header, boku->m_recv_header_length + header_ending_pos )
                         CopyMemory( @boku->m_recv_header[ boku->m_recv_header_length ], _4kbuffer, header_ending_pos )
                         boku->m_recv_header_length += header_ending_pos
-                    LeaveCriticalSection( cast( CRITICAL_SECTION ptr, @boku->m_header_critical ) )
+                    mutexunlock( boku->m_header_critical )
                     'set the flag
                     boku->m_recv_header_state = HEAD_COMPLETED
                     boku->parseResponseHeader()
@@ -109,11 +110,11 @@ sub CLionetHttp.onSocket( socketboku as CLionet ptr, msg as integer, errcode as 
                         boku->m_recv_chunk_length = _size - header_ending_pos
                         if boku->parseChunk() = 0 then boku->SetState( CLHS_COMPLETED )
                     else
-                        EnterCriticalSection( cast( CRITICAL_SECTION ptr, @boku->m_buffer_critical ) )
+                        mutexlock( boku->m_buffer_critical )
                             boku->m_recv_buffer = reallocate( boku->m_recv_buffer, _size - header_ending_pos )
                             CopyMemory( boku->m_recv_buffer, @_4kbuffer[header_ending_pos], _size - header_ending_pos )
                             boku->m_recv_length = _size - header_ending_pos
-                        LeaveCriticalSection( cast( CRITICAL_SECTION ptr, @boku->m_buffer_critical ) )
+                        mutexunlock( boku->m_buffer_critical )
                         if boku->m_recv_length = boku->m_recv_expected_length then boku->SetState( CLHS_COMPLETED )
                         if boku->m_recv_length > boku->m_recv_expected_length then WHAT_THE_HELL( "RECEIVED A LARGER PACKET" )
                     endif
@@ -121,11 +122,11 @@ sub CLionetHttp.onSocket( socketboku as CLionet ptr, msg as integer, errcode as 
                 else
                     'There's no the terminator yet.
                     'header
-                    EnterCriticalSection( cast( CRITICAL_SECTION ptr, @boku->m_header_critical ) )
+                    mutexlock( boku->m_header_critical )
                         boku->m_recv_header = reallocate( boku->m_recv_header, boku->m_recv_header_length + _size )
                         CopyMemory( @boku->m_recv_header[ boku->m_recv_header_length ], _4kbuffer, _size )
                         boku->m_recv_header_length += _size
-                    LeaveCriticalSection( cast( CRITICAL_SECTION ptr, @boku->m_header_critical ) )
+                    mutexunlock( boku->m_header_critical )
                 endif
             else
                 'Receiving the content: Verify that the size is not overflow, and copy data to buffer.
@@ -133,14 +134,15 @@ sub CLionetHttp.onSocket( socketboku as CLionet ptr, msg as integer, errcode as 
                 if boku->m_chunked then
                     boku->m_recv_chunk = reallocate( boku->m_recv_chunk, boku->m_recv_chunk_length + _size )
                     CopyMemory( @boku->m_recv_chunk[ boku->m_recv_chunk_length ], _4kbuffer, _size )
+                        getdc(0)
                     boku->m_recv_chunk_length += _size
                     if boku->parseChunk() = 0 then boku->SetState( CLHS_COMPLETED )
                 else
-                    EnterCriticalSection( cast( CRITICAL_SECTION ptr, @boku->m_buffer_critical ) )
+                    mutexlock( boku->m_buffer_critical )
                         boku->m_recv_buffer = reallocate( boku->m_recv_buffer, boku->m_recv_length + _size )
                         CopyMemory( @boku->m_recv_buffer[ boku->m_recv_length ], _4kbuffer, _size )
                         boku->m_recv_length += _size
-                    LeaveCriticalSection( cast( CRITICAL_SECTION ptr, @boku->m_buffer_critical ) )
+                    mutexunlock( boku->m_buffer_critical )
                     if boku->m_recv_length = boku->m_recv_expected_length then boku->SetState( CLHS_COMPLETED )
                     if boku->m_recv_length > boku->m_recv_expected_length then WHAT_THE_HELL( "RECEIVED A LARGER PACKET" )
                 endif
@@ -211,8 +213,8 @@ function CLionetHttp.open( url as string, method as string, async as integer, ti
     this.m_socket->opensocket()
     this.m_socket->connect( this.m_host, this.m_port )
     '
-    EnterCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_header_critical ) )
-    EnterCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_buffer_critical ) )
+    mutexlock( this.m_header_critical )
+    mutexlock( this.m_buffer_critical )
     deallocate( this.m_recv_header )
     deallocate( this.m_recv_buffer )
     deallocate( this.m_recv_chunk )
@@ -222,8 +224,8 @@ function CLionetHttp.open( url as string, method as string, async as integer, ti
     this.m_recv_header_length = 0
     this.m_recv_length = 0
     this.m_recv_chunk_length = 0
-    LeaveCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_buffer_critical ) )
-    LeaveCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_header_critical ) )
+    mutexunlock( this.m_buffer_critical )
+    mutexunlock( this.m_header_critical )
     this.m_recv_header_state = HEAD_NOTCOMPLETE
     this.m_responseHeader = ""
     
@@ -249,7 +251,7 @@ function CLionetHttp.send( body as string, mime_type as string ) as integer
 end function
 
 sub CLionetHttp.parseResponseHeader()
-    EnterCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_header_critical ) )
+    mutexlock( this.m_header_critical )
         this.m_responseHeader = space( this.m_recv_header_length )
         CopyMemory( strptr( this.m_responseHeader ), this.m_recv_header, this.m_recv_header_length )
         deallocate( this.m_recv_header )
@@ -263,7 +265,7 @@ sub CLionetHttp.parseResponseHeader()
         else
             WHAT_THE_HELL("OMG! What's that?")
         endif
-    LeaveCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_header_critical ) )
+    mutexunlock( this.m_header_critical )
 end sub
 
 function CLionetHttp._parseChunk() as integer
@@ -275,11 +277,11 @@ function CLionetHttp._parseChunk() as integer
         dim as integer posB = posA + ( len( NEWLINE ) - 1 ) + l_recv_chunk_expected_length + len( NEWLINE )
         if this.m_recv_chunk_length >= posB then
             'print l_chunk_str
-            EnterCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_buffer_critical ) )
+            mutexlock( this.m_buffer_critical )
                 this.m_recv_buffer = reallocate( this.m_recv_buffer, this.m_recv_length + l_recv_chunk_expected_length  )
                 CopyMemory( @this.m_recv_buffer[ this.m_recv_length ], @this.m_recv_chunk[ posA + ( len( NEWLINE ) - 1 ) ], l_recv_chunk_expected_length )
                 this.m_recv_length += l_recv_chunk_expected_length
-            LeaveCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_buffer_critical ) )
+            mutexunlock( this.m_buffer_critical )
             this.m_recv_chunk_length = this.m_recv_chunk_length - posB
             CopyMemory( this.m_recv_chunk, @this.m_recv_chunk[ posB ], this.m_recv_chunk_length )
             this.m_recv_chunk = reallocate( this.m_recv_chunk, this.m_recv_chunk_length )
@@ -340,10 +342,10 @@ property CLionetHttp.responseDescription() as string
 end property
 
 property CLionetHttp.responseString() as string
-    EnterCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_buffer_critical ) )
+    mutexlock( this.m_buffer_critical )
         dim as string l_responseContent = space( this.m_recv_length )
         CopyMemory( strptr( l_responseContent ), this.m_recv_buffer, this.m_recv_length )
-    LeaveCriticalSection( cast( CRITICAL_SECTION ptr, @this.m_buffer_critical ) )
+    mutexunlock( this.m_buffer_critical )
     return l_responseContent
 end property
 

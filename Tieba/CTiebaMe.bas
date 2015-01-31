@@ -80,7 +80,7 @@ namespace CTieba
         this.user.id = ""
         this.user.name = ""
         
-        open "px.tmp" for output as 1:print #1,this.sender.http.responseString:close 1
+        open "px.tmp" for output as 1:print #1,_json_str_decode(this.sender.http.responseString):close 1
         
         dim as any ptr root = json_parse( this.sender.http.responseString )
         PARSE_AND_SETERR_1( root )
@@ -195,7 +195,7 @@ namespace CTieba
         this.sender.http.open( "http://tieba.baidu.com/dc/common/tbs" )
         this.sender.http.setRequestHeader( "Cookie", "BDUSS=" & this.bduss )
         this.sender.http.send()
-        if this.sender.http.state <> CLHS_COMPLETED then this.setErr( "Network error." ) : return
+        if this.sender.http.state <> CLHS_COMPLETED then this.setErr( "Network error."& this.sender.http.state ) : return
         dim as any ptr root = json_parse( this.sender.http.responseString )
         this.tbs = json_sub_str( root, "tbs" )
         json_free( root )
@@ -314,11 +314,23 @@ namespace CTieba
             for_next()
             
             for i as integer = 0 to ubound( .threadList )
-                dim as string elm_name = .threadList(i).author.id
+                dim as string elm_id = .threadList(i).author.id
                 for j as integer = 0 to ubound( users_temp )
-                    'TODO
+                    if elm_id = users_temp(j).id then
+                        .threadList(i).author = users_temp(j)
+                        exit for
+                    endif
                 next
             next
+            erase users_temp
+            
+          node = json_sub( root, "page" )
+            .pageInfo.pageSize = json_sub_int( node, "page_size" )
+            .pageInfo.current = json_sub_int( node, "current_page" )
+            .pageInfo.totalCount = json_sub_int( node, "total_page" )
+            .pageInfo.hasNext = json_sub_int( node, "has_more" )
+            .pageInfo.hasPrev = json_sub_int( node, "has_prev" )
+            
         end with
         json_free( root )
         return _result

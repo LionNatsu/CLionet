@@ -1,4 +1,0 @@
-
-Connection: keep-alive
-Set-Cookie: SERVERID=6887c6cd50b1c1f1cd7c76b03573a82e|1407171963|1407171871;Path=/
-

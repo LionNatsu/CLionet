@@ -68,8 +68,8 @@ type CLionetHttp extends object
     declare function _parseChunk() as integer
     declare function parseChunk() as integer
     
-    m_header_critical as zstring * 24 'CRITICAL_SECTION
-    m_buffer_critical as zstring * 24 'CRITICAL_SECTION
+    m_header_critical as any ptr 'CRITICAL_SECTION
+    m_buffer_critical as any ptr 'CRITICAL_SECTION
     m_event_statechange as any ptr
     m_event_waitfor as CLIONETHTTP_STATE
 end type
